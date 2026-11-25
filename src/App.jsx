@@ -44,7 +44,7 @@ export default function App() {
         </div>
       </header>
       {DEMO && <div className="demo-flag">demo mode · data lives in this browser · add Firebase config to go live</div>}
-      <main className={'main' + (tab === 'board' ? ' full' : '')}>
+      <main className={'main' + (tab === 'board' && rest[0] ? ' full' : '')}>
         {tab === 'today' && <Today />}
         {tab === 'roadmap' && <Roadmap track={rest[0]} node={rest[1]} />}
         {tab === 'crew' && <Crew />}

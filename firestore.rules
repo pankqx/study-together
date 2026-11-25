@@ -1,0 +1,39 @@
+rules_version = '2';
+// Paste this into Firebase console → Firestore Database → Rules.
+// Keep the email list in sync with CREW in src/config.js.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function crew() {
+      return request.auth != null && request.auth.token.email_verified == true
+        && request.auth.token.email.lower() in [
+          'pankqx@gmail.com',
+          'friend1@gmail.com',
+          'friend2@gmail.com'
+        ];
+    }
+    // profiles & progress: everyone in the crew can read, you can only write your own
+    match /users/{uid} {
+      allow read: if crew();
+      allow write: if crew() && request.auth.uid == uid;
+    }
+    // planner: crew can peek, only the owner edits
+    match /plans/{uid} {
+      allow read: if crew();
+      allow write: if crew() && request.auth.uid == uid;
+    }
+    // shared spaces
+    match /posts/{id} {
+      allow read, create: if crew();
+      allow update: if crew();                                   // reactions
+      allow delete: if crew() && resource.data.uid == request.auth.uid;
+    }
+    match /messages/{id} {
+      allow read, create, update: if crew();
+      allow delete: if crew() && resource.data.uid == request.auth.uid;
+    }
+    match /boards/{id} {
+      allow read, write: if crew();
+      match /files/{fileId} { allow read, write: if crew(); }
+    }
+  }
+}
