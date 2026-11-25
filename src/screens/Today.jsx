@@ -4,6 +4,7 @@ import { TRACKS, nodeProgress, conceptId, trackProgress } from '../data/roadmap.
 import { PRONTOPY_URL } from '../config.js'
 import { stats, rank, nextUp, colorOf, nickOf, today } from '../lib/logic.js'
 import { Avatar, Bar, Check } from '../ui.jsx'
+import { Echo } from '../art.jsx'
 
 const hello = () => { const h = new Date().getHours(); return h < 5 ? 'Still up' : h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening' }
 
@@ -18,16 +19,19 @@ export default function Today() {
   return (
     <div className="page today">
       <section className="hero">
-        <div>
-          <p className="mono eyebrow">{new Date().toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })}</p>
-          <h1>{hello()}, <span style={{ color: colorOf(me) }}>{nickOf(me)}</span>.</h1>
-          <p className="sub">{s.todayCount ? `${s.todayCount} thing${s.todayCount > 1 ? 's' : ''} done today. Keep the chain alive.` : 'Nothing ticked yet today. One checkbox keeps the streak.'}</p>
-        </div>
-        <div className="hero-stats">
-          <div className="big-stat"><b>{s.streak}</b><span>day streak 🔥</span></div>
-          <div className="big-stat"><b>{s.ticks}</b><span>concepts</span></div>
-          <div className="big-stat rank"><b>{r.title}</b><span>{s.xp} xp{r.next ? ` · ${r.next[0] - s.xp} to ${r.next[1]}` : ''}</span>
-            {r.next && <Bar pct={(s.xp - r.at) / (r.next[0] - r.at)} color={colorOf(me)} h={6} />}</div>
+        <Echo text={nickOf(me)} rows={3} className="small" />
+        <div className="hero-meta">
+          <div>
+            <p className="mono eyebrow">{new Date().toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })}</p>
+            <h1>{hello()}.</h1>
+            <p className="sub">{s.todayCount ? `${s.todayCount} thing${s.todayCount > 1 ? 's' : ''} done today. Keep the chain alive.` : 'Nothing ticked yet today. One checkbox keeps the streak.'}</p>
+          </div>
+          <div className="hero-stats">
+            <div className="big-stat"><b>{s.streak}</b><span>day streak 🔥</span></div>
+            <div className="big-stat"><b>{s.ticks}</b><span>concepts</span></div>
+            <div className="big-stat rank"><b>{r.title}</b><span>{s.xp} xp{r.next ? ` · ${r.next[0] - s.xp} to ${r.next[1]}` : ''}</span>
+              {r.next && <Bar pct={(s.xp - r.at) / (r.next[0] - r.at)} color={colorOf(me)} h={6} />}</div>
+          </div>
         </div>
       </section>
 

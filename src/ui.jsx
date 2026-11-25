@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { colorOf, initial, nickOf } from './lib/logic.js'
+import { colorOf, initial, nickOf, inkOn } from './lib/logic.js'
 
 export const REACTIONS = { fire: '🔥', clap: '👏', brain: '🧠', lol: '😂', skull: '💀', heart: '❤️' }
 
@@ -7,7 +7,7 @@ export function Avatar({ u, size = 32, ring, title }) {
   const [bad, setBad] = useState(false)
   return (
     <span className={'av' + (ring ? ' ring' : '')} title={title || nickOf(u)}
-      style={{ '--c': colorOf(u), width: size, height: size, fontSize: size * 0.44 }}>
+      style={{ '--c': colorOf(u), color: inkOn(colorOf(u)), width: size, height: size, fontSize: size * 0.44 }}>
       {u?.photo && !bad ? <img src={u.photo} alt="" referrerPolicy="no-referrer" onError={() => setBad(true)} /> : initial(u)}
     </span>
   )

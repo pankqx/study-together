@@ -2,14 +2,14 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useStore } from '../store.jsx'
 import { DEL, uid8 } from '../lib/backend.js'
 import { TRACKS } from '../data/roadmap.js'
-import { colorOf, nickOf, today, addDays } from '../lib/logic.js'
+import { colorOf, nickOf, today, addDays, inkOn } from '../lib/logic.js'
 import { Avatar, Check, Sheet } from '../ui.jsx'
 
 const START = 5, END = 24, HOUR = 52, SNAP = 15
 const fmt = (m) => { const h = Math.floor(m / 60), mm = m % 60; return `${((h + 11) % 12) + 1}${mm ? ':' + String(mm).padStart(2, '0') : ''}${h < 12 || h === 24 ? 'a' : 'p'}` }
 const dayName = (iso) => new Date(iso + 'T12:00').toLocaleDateString(undefined, { weekday: 'short' })
 const dayNum = (iso) => new Date(iso + 'T12:00').getDate()
-const KINDS = [['dsa', 'DSA', '#141414'], ...TRACKS.filter((t) => t.id !== 'dsa').map((t) => [t.id, t.title, null]), ['break', 'Break', '#9a9a9a']]
+const KINDS = [['dsa', 'DSA', '#202227'], ...TRACKS.filter((t) => t.id !== 'dsa').map((t) => [t.id, t.title, null]), ['break', 'Break', '#7fa9bb']]
 
 // "airflow dags 7-9pm tomorrow" → { title, day, start, end }
 export function parseQuick(text, base) {
@@ -143,7 +143,7 @@ export default function Planner() {
                   {crew.filter((u) => peek[u.id]).flatMap((u) => Object.values(peekPlans[u.id]?.blocks || {}).filter((b) => b.day === d).map((b, i) => (
                     <div key={u.id + i} className="p-block peek" style={{ top: (b.start - START * 60) / 60 * HOUR, height: (b.end - b.start) / 60 * HOUR, '--c': colorOf(u) }}><b>{nickOf(u)}</b> {b.title}</div>)))}
                   {blocks.filter((b) => (ghost?.id === b.id ? ghost.day : b.day) === d).map((b0) => { const b = ghost?.id === b0.id ? ghost : b0; return (
-                    <div key={b.id} className={'p-block' + (b.done ? ' done' : '') + (ghost?.id === b.id ? ' dragging' : '')} style={{ top: (b.start - START * 60) / 60 * HOUR, height: Math.max(18, (b.end - b.start) / 60 * HOUR - 2), '--c': colorFor(b) }}
+                    <div key={b.id} className={'p-block' + (b.done ? ' done' : '') + (ghost?.id === b.id ? ' dragging' : '')} style={{ top: (b.start - START * 60) / 60 * HOUR, height: Math.max(18, (b.end - b.start) / 60 * HOUR - 2), '--c': colorFor(b), color: inkOn(colorFor(b)) }}
                       onPointerDown={(e) => onDown(e, b0, 'move')}>
                       <b>{b.done ? '✓ ' : ''}{b.title}</b><small>{fmt(b.start)}–{fmt(b.end)}</small>
                       <span className="p-resize" onPointerDown={(e) => onDown(e, b0, 'resize')} />

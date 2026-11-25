@@ -1,7 +1,8 @@
 import { ALL_NODES, NODE, TRACKS, TOTAL_CONCEPTS, conceptId, nodeProgress, trackProgress } from '../data/roadmap.js'
 import { CREW } from '../config.js'
 
-export const COLORS = ['#ff5b3a', '#3355ff', '#ffb800', '#16a36a', '#b14cff']
+export const COLORS = ['#ef3b2d', '#ffc93c', '#d29457', '#7b61ff', '#18b38a'] // pepperoni, cheese, crust
+export const inkOn = (c) => (['#ffc93c', '#d29457'].includes(c) ? '#202227' : '#ffffff')
 export const today = (d = new Date()) => { const x = new Date(d); x.setMinutes(x.getMinutes() - x.getTimezoneOffset()); return x.toISOString().slice(0, 10) }
 export const addDays = (iso, n) => { const d = new Date(iso + 'T12:00:00'); d.setDate(d.getDate() + n); return today(d) }
 

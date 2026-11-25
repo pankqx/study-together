@@ -3,6 +3,7 @@ import { useStore } from './store.jsx'
 import { DEMO } from './config.js'
 import { Avatar } from './ui.jsx'
 import { stats } from './lib/logic.js'
+import { Echo, Buddies } from './art.jsx'
 import Today from './screens/Today.jsx'
 import Roadmap from './screens/Roadmap.jsx'
 import Crew from './screens/Crew.jsx'
@@ -39,7 +40,7 @@ export default function App() {
         <nav className="side-nav">{TABS.map(([id, label, g]) => <a key={id} href={'#' + id} className={tab === id ? 'on' : ''}><span>{g}</span>{label}</a>)}</nav>
         <div className="top-right">
           <span className="flame" title="Your streak"><b>{s.streak}</b>🔥</span>
-          <button className="icon-btn" onClick={() => setTheme(theme === 'ink' ? 'paper' : 'ink')} title="Switch theme" aria-label="Switch theme">{theme === 'ink' ? '○' : '●'}</button>
+          <button className="icon-btn" onClick={() => setTheme(theme === 'ink' ? 'sky' : 'ink')} title="Switch theme" aria-label="Switch theme">{theme === 'ink' ? '○' : '●'}</button>
           <button className="me-btn" onClick={() => confirm('Sign out?') && signOut()} title="Sign out"><Avatar u={me} size={30} /></button>
         </div>
       </header>
@@ -65,13 +66,14 @@ export function Logo({ big }) {
 function Login({ onSignIn, denied }) {
   return (
     <div className="login">
+      <Echo text="Study together" rows={5} />
+      <div className="login-art"><Buddies /></div>
       <div className="login-card">
-        <Logo big />
-        <h1>Three friends.<br />One roadmap.<br /><span className="hl">No excuses.</span></h1>
-        <p className="mono">Full stack · DBMS · DevOps · Cloud · Data engineering · AI · System design · DSA</p>
+        <Logo />
+        <h1>Three friends. One roadmap. <span className="hl">No excuses.</span></h1>
+        <p className="mono">full stack · dbms · devops · cloud · data engineering · ai · system design · dsa</p>
         <button className="btn big" onClick={onSignIn}><GoogleG /> Continue with Google</button>
         {denied && <p className="warn">{denied} isn't on the crew list. Ask Pank to add you.</p>}
-        <div className="login-dots" aria-hidden><i /><i /><i /></div>
       </div>
     </div>
   )

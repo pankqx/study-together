@@ -13,10 +13,10 @@ export function StoreProvider({ children }) {
   const [denied, setDenied] = useState(null)
   const [users, setUsers] = useState([])
   const [posts, setPosts] = useState([])
-  const [theme, setTheme] = useState(() => localStorage.getItem('st-theme') || 'paper')
+  const [theme, setTheme] = useState(() => (localStorage.getItem('st-theme') === 'ink' ? 'ink' : 'sky'))
 
   useEffect(() => { document.documentElement.dataset.theme = theme; localStorage.setItem('st-theme', theme)
-    document.querySelector('meta[name=theme-color]')?.setAttribute('content', theme === 'ink' ? '#0c0c0c' : '#f4efe4') }, [theme])
+    document.querySelector('meta[name=theme-color]')?.setAttribute('content', '#202227') }, [theme])
 
   useEffect(() => { getBackend().then((b) => { setBe(b); b.onAuth(async (u) => {
     if (u && !DEMO && crewIndex(u.email) < 0) { setDenied(u.email); await b.signOut(); return }
