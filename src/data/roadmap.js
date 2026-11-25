@@ -533,7 +533,7 @@ export const LEVELS = { basic: 'Basic', core: 'Core', advanced: 'Advanced', pro:
 
 // helpers
 export const slug = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '').slice(0, 60)
-export const conceptId = (nodeId, c) => `${nodeId}.${slug(c)}`
+export const conceptId = (nodeId, c) => `${nodeId}__${slug(c)}` // no dots: safe as a Firestore field path
 export const ALL_NODES = TRACKS.flatMap((t) => t.nodes.map((nd) => ({ ...nd, track: t.id })))
 export const NODE = Object.fromEntries(ALL_NODES.map((nd) => [nd.id, nd]))
 export const TRACK = Object.fromEntries(TRACKS.map((t) => [t.id, t]))
