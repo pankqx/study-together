@@ -6,7 +6,7 @@ import { slug } from '../data/roadmap.js'
 
 const DIFF = { easy: 'Easy', medium: 'Medium', hard: 'Hard' }
 const PLATFORMS = [
-  [/leetcode\.com/i, 'LeetCode'], [/prontopy|pythondsa/i, 'ProntoPy'], [/geeksforgeeks/i, 'GfG'],
+  [/leetcode\.com/i, 'LeetCode'], [/prontopy|pythondsa|python-dsa-sigma/i, 'ProntoPy'], [/geeksforgeeks/i, 'GfG'],
   [/hackerrank/i, 'HackerRank'], [/codeforces/i, 'Codeforces'], [/neetcode/i, 'NeetCode'], [/codechef/i, 'CodeChef'],
 ]
 const titleCase = (s) => s.split('-').filter(Boolean).map((w) => w[0].toUpperCase() + w.slice(1)).join(' ')

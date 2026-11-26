@@ -15,7 +15,6 @@ export default function Roadmap({ track: trackParam, node }) {
   const { me, rm, mode, api, crew } = useStore()
   const mine = myTracksOf(me)
   const track = trackParam || mine.find((id) => id !== 'dsa') || 'journey'
-  const [q, setQ] = useState('')
   const [edit, setEdit] = useState(false)
   const [showLog, setShowLog] = useState(false)
   const all = useMemo(() => { let d = 0; rm.ALL.forEach((nd) => { d += nodeProgress(nd, me?.progress).done }); return d }, [rm, me])
@@ -33,7 +32,6 @@ export default function Roadmap({ track: trackParam, node }) {
             <button className={mode === 'team' ? 'on' : ''} onClick={() => api.setMode('team')} title="Everyone follows the same roadmap">Team</button>
             <button className={mode === 'mine' ? 'on' : ''} onClick={() => api.setMode('mine')} title="The team roadmap plus your own changes">Mine</button>
           </div>
-          <input className="rm-search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search topics and concepts" />
           <button className={'rm-btn' + (edit ? ' on' : '')} onClick={() => setEdit(!edit)}>{edit ? 'Done editing' : 'Edit'}</button>
           <button className="rm-btn" onClick={() => setShowLog(true)}>Changes</button>
         </div>
@@ -59,8 +57,7 @@ export default function Roadmap({ track: trackParam, node }) {
         </aside>
 
         <main className="rm-main">
-          {q.trim() ? <Search q={q.trim()} edit={edit} open={node} />
-            : track === 'journey' || !t ? <Journey edit={edit} open={node} />
+          {track === 'journey' || !t ? <Journey edit={edit} open={node} />
             : <TrackView t={t} edit={edit} open={node} />}
         </main>
       </div>
@@ -177,19 +174,6 @@ function Journey({ edit, open }) {
             {nodes.map((nd) => <Row key={nd.id} nd={nd} t={rm.TRACK[nd.track]} edit={edit} openId={open} routeTrack="journey" showTrack />)}
           </div>)
       })}
-    </section>
-  )
-}
-
-function Search({ q, edit, open }) {
-  const { rm } = useStore()
-  const needle = q.toLowerCase()
-  const hits = rm.ALL.filter((nd) => nd.title.toLowerCase().includes(needle) || nd.concepts.some((c) => cText(c).toLowerCase().includes(needle)))
-  return (
-    <section>
-      <div className="rm-head"><div><h2>Search</h2><p className="rm-meta">{hits.length} topic{hits.length === 1 ? '' : 's'} match “{q}”</p></div></div>
-      {hits.map((nd) => <Row key={nd.id} nd={nd} t={rm.TRACK[nd.track]} edit={edit} openId={open} routeTrack={nd.track} showTrack highlight={needle} />)}
-      {!hits.length && <p className="rm-empty">No topic or concept matches. Try fewer words.</p>}
     </section>
   )
 }

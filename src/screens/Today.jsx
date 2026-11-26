@@ -17,6 +17,11 @@ export default function Today() {
 
   return (
     <div className="page today">
+      <div className="today-bar">
+        <span className="today-brand">study<em>/</em>together</span>
+        <span className="flame" title="Your streak"><b>{s.streak}</b> day streak</span>
+        <button className="me-btn" onClick={() => window.dispatchEvent(new Event('st:profile'))} title="Your profile" aria-label="Your profile"><Avatar u={me} size={40} /></button>
+      </div>
       <section className="hero">
         <Echo text={nickOf(me)} rows={3} className="small" />
         <div className="hero-meta">
@@ -66,6 +71,14 @@ export default function Today() {
               <Avatar u={u} size={44} ring={us.todayCount > 0} />
               <div><b>{nickOf(u)}</b><small>{us.todayCount} today · {us.streak}🔥</small></div>
             </div>) })}
+        </div>
+      </section>
+
+      <section>
+        <div className="sec-head"><h2>Plan & sketch</h2></div>
+        <div className="plan-grid">
+          <TodayPlan />
+          <BoardsMini />
         </div>
       </section>
     </div>
@@ -131,5 +144,36 @@ function StudyRoom() {
         {studying.map((u) => <div key={u.id} className="in-room" style={{ '--c': colorOf(u) }}><Avatar u={u} size={30} ring /><span>{nickOf(u)}</span><small>{u.studying.label}</small></div>)}
       </div>
     </section>
+  )
+}
+
+function TodayPlan() {
+  const { be, me } = useStore()
+  const [plan, setPlan] = useState(null)
+  useEffect(() => be.watchDoc('plans/' + me.id, setPlan), [be, me.id])
+  const fmt = (m) => { const h = Math.floor(m / 60), mm = m % 60; return `${((h + 11) % 12) + 1}${mm ? ':' + String(mm).padStart(2, '0') : ''}${h < 12 ? 'am' : 'pm'}` }
+  const blocks = Object.entries(plan?.blocks || {}).map(([id, b]) => ({ id, ...b })).filter((b) => b.day === today()).sort((a, b) => a.start - b.start)
+  const mins = blocks.filter((b) => b.kind !== 'break').reduce((a, b) => a + b.end - b.start, 0)
+  return (
+    <div className="card mini-card">
+      <div className="row between"><h3>Today's plan</h3><span className="mono dim">{Math.round(mins / 6) / 10} h planned</span></div>
+      {blocks.length ? <ul className="mini-list">{blocks.map((b) => <li key={b.id} className={b.done ? 'done' : ''}><span className="mono">{fmt(b.start)}–{fmt(b.end)}</span><b>{b.title}</b></li>)}</ul>
+        : <p className="dim">Nothing planned yet. Block out your study hours so the day doesn't decide for you.</p>}
+      <a className="btn solid" href="#plan">Open planner</a>
+    </div>
+  )
+}
+
+function BoardsMini() {
+  const { be } = useStore()
+  const [boards, setBoards] = useState([])
+  useEffect(() => be.watchCol('boards', setBoards, { orderBy: 'updatedAt', desc: true, limit: 4 }), [be])
+  return (
+    <div className="card mini-card">
+      <div className="row between"><h3>Boards</h3><span className="mono dim">{boards.length ? 'recent' : ''}</span></div>
+      {boards.length ? <ul className="mini-list">{boards.map((b) => <li key={b.id}><a href={'#board/' + b.id}><b>{b.name}</b></a></li>)}</ul>
+        : <p className="dim">A shared whiteboard for system designs, pipelines and mind maps.</p>}
+      <a className="btn solid" href="#board">Open boards</a>
+    </div>
   )
 }

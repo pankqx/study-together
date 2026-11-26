@@ -26,7 +26,7 @@ export const CREW = [
 export const GIPHY_KEY = ''
 
 // 4) Where your DSA practice lives.
-export const PRONTOPY_URL = 'https://pankqx.github.io/pythondsa/'
+export const PRONTOPY_URL = 'https://python-dsa-sigma.vercel.app/' // ProntoPy (beta)
 
 export const OPEN_SIGNUP = true
 
