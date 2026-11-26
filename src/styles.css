@@ -900,3 +900,25 @@ input, textarea, select { border: 2px solid transparent; background: var(--card)
   .bottom-nav, .rm-top .lg-call, .ds-tabs, .rc-top, .rc-calls, .today-bar { display: none !important; }
   .shell, .rm, body { background: #fff !important; } .rc-person { break-inside: avoid; }
 }
+
+/* ═════════ MOBILE TRACK PICKER ═════════ */
+.rm-mobile { margin: 0 -20px; }
+@media (min-width: 900px) { .rm-mobile { display: none; } }
+.rm-pills { display: flex; gap: 8px; overflow-x: auto; padding: 2px 20px 4px; scrollbar-width: none; }
+.rm-pills::-webkit-scrollbar { display: none; }
+.rm-pill { flex: none; display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--r-line); background: var(--r-card); color: var(--r-ink); border-radius: 999px; padding: 8px 14px 8px 9px; font-size: 14px; font-weight: 600; white-space: nowrap; }
+.rm-pill.on { background: var(--r-ink); color: var(--r-card); border-color: var(--r-ink); }
+.rm-pill-ring { width: 16px; height: 16px; border-radius: 50%; background: conic-gradient(currentColor calc(var(--p) * 360deg), color-mix(in srgb, currentColor 18%, transparent) 0); }
+.rm-pill.more { padding-left: 14px; color: var(--r-mute); }
+.rm-sheet { display: grid; gap: 6px; padding-bottom: 12px; } .rm-sheet .rm-side-label { margin: 14px 2px 4px; }
+.rm-sheet .rm-side-label:first-child { margin-top: 0; }
+.rm-tgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.rm-tcard { display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto; gap: 6px 10px; align-items: center; text-align: left; border: 1px solid var(--line-soft); background: var(--chip); color: var(--ink); border-radius: 14px; padding: 12px; }
+.rm-tcard.on { border-color: var(--ink); }
+.rm-tcard-g { grid-row: span 2; width: 32px; height: 32px; border-radius: 10px; background: var(--bar); color: var(--sky); display: grid; place-items: center; font-size: 15px; }
+.rm-tcard b { font-size: 14px; line-height: 1.2; }
+.rm-tcard-bar { display: none; }
+.rm-tcard em { font: 11px 'IBM Plex Mono', monospace; font-style: normal; color: var(--dim); }
+.rm-body { grid-template-columns: minmax(0, 1fr); } .rm-side, .rm-main { min-width: 0; }
+@media (min-width: 900px) { .rm-body { grid-template-columns: 270px minmax(0, 1fr); } }
+.rm-pill.more { background: var(--r-soft); color: var(--r-ink); border-color: transparent; }

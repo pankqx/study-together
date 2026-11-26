@@ -27,8 +27,8 @@ export function bestStreak(activity = {}) {
   return best
 }
 
-export const DEFAULT_TRACKS = ['fe', 'be', 'db', 'de', 'ai', 'dsa']
-export function myTracksOf(u) { if (u?.myTracks?.length) return u.myTracks; const i = crewIndex(u?.email); return CREW[i]?.tracks || u?.focus || DEFAULT_TRACKS }
+export const DEFAULT_TRACKS = ['fe', 'be', 'db', 'de', 'ai']
+export function myTracksOf(u) { if (u?.myTracks?.length) return u.myTracks.filter((t) => t !== 'dsa'); const i = crewIndex(u?.email); return CREW[i]?.tracks || u?.focus || DEFAULT_TRACKS }
 export function pathProgress(u, rm = BASE) { let d = 0, t = 0; for (const id of myTracksOf(u)) { const tr = rm.TRACK[id]; if (!tr) continue; const p = trackProgress(tr, u?.progress); d += p.done; t += p.total } return { done: d, total: t, pct: t ? d / t : 0 } }
 
 export function stats(u, posts = [], rm = BASE) {

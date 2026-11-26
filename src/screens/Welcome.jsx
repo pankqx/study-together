@@ -11,7 +11,7 @@ export default function Welcome() {
   const [ch, setCh] = useState(charOf(me) || '')
   const [tracks, setTracks] = useState(myTracksOf(me))
   const toggle = (id) => setTracks(tracks.includes(id) ? tracks.filter((x) => x !== id) : [...tracks, id])
-  const done = () => api.finishOnboarding({ nick: nick.trim() || nickOf(me), char: ch, myTracks: tracks.length ? tracks : ['dsa'] })
+  const done = () => api.finishOnboarding({ nick: nick.trim() || nickOf(me), char: ch, myTracks: tracks.length ? tracks : ['fe'] })
   return (
     <Sheet open title="Welcome to study/together" onClose={done}>
       <div className="pf welcome">

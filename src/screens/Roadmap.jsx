@@ -4,6 +4,7 @@ import { LEVELS, nodeProgress, trackProgress, conceptId, cText } from '../data/r
 import { PRONTOPY_URL } from '../config.js'
 import { colorOf, nickOf, initial, timeAgo, myTracksOf } from '../lib/logic.js'
 import { Composer } from './Feed.jsx'
+import { Sheet } from '../ui.jsx'
 import { go } from '../App.jsx'
 
 const LEVEL_ORDER = ['basic', 'core', 'advanced', 'pro']
@@ -14,7 +15,7 @@ const statusOf = (p) => (p.pct === 1 ? 'done' : p.done ? 'doing' : 'todo')
 export default function Roadmap({ track: trackParam, node }) {
   const { me, rm, mode, api, crew } = useStore()
   const mine = myTracksOf(me)
-  const track = trackParam || mine.find((id) => id !== 'dsa') || 'journey'
+  const track = trackParam || mine[0] || 'journey'
   const [edit, setEdit] = useState(false)
   const [showLog, setShowLog] = useState(false)
   const all = useMemo(() => { let d = 0; rm.ALL.forEach((nd) => { d += nodeProgress(nd, me?.progress).done }); return d }, [rm, me])
@@ -41,11 +42,7 @@ export default function Roadmap({ track: trackParam, node }) {
 
       <div className="rm-body">
         <aside className="rm-side">
-          <select className="rm-select" value={track} onChange={(e) => go('roadmap', e.target.value)}>
-            <optgroup label="My tracks">{rm.tracks.filter((x) => mine.includes(x.id)).map((x) => <option key={x.id} value={x.id}>{x.title}</option>)}</optgroup>
-            <optgroup label="Other tracks">{rm.tracks.filter((x) => !mine.includes(x.id)).map((x) => <option key={x.id} value={x.id}>{x.title}</option>)}</optgroup>
-            <option value="journey">Crossover journey (blended)</option>
-          </select>
+          <MobileTracks track={track} mine={mine} />
           <nav className="rm-tracks">
             <div className="rm-side-label">My tracks</div>
             {rm.tracks.filter((x) => mine.includes(x.id)).map((x) => <TrackLink key={x.id} id={x.id} label={x.title} pct={trackProgress(x, me?.progress).pct} active={track === x.id} />)}
@@ -350,6 +347,43 @@ function ChangeLog({ onClose }) {
           {!visible.length && <li className="rm-empty">No edits yet.</li>}
         </ol>
       </aside>
+    </div>
+  )
+}
+
+// Phones: a slim row of your own tracks + one tap to see everything.
+function MobileTracks({ track, mine }) {
+  const { rm, me } = useStore()
+  const [open, setOpen] = useState(false)
+  const pick = (id) => { setOpen(false); go('roadmap', id) }
+  const pct = (t) => trackProgress(t, me?.progress).pct
+  const Card = ({ t }) => { const p = pct(t); return (
+    <button className={'rm-tcard' + (track === t.id ? ' on' : '')} onClick={() => pick(t.id)}>
+      <span className="rm-tcard-g">{t.glyph}</span><b>{t.title}</b>
+      <span className="rm-tcard-bar"><i style={{ width: p * 100 + '%' }} /></span><em>{Math.round(p * 100)}%</em>
+    </button>) }
+  const myTracks = rm.tracks.filter((t) => mine.includes(t.id))
+  const current = rm.TRACK[track]
+  return (
+    <div className="rm-mobile">
+      <div className="rm-pills">
+        <button className="rm-pill more" onClick={() => setOpen(true)} aria-label="All tracks">☰ All</button>
+        {myTracks.map((t) => { const p = pct(t); return (
+          <button key={t.id} className={'rm-pill' + (track === t.id ? ' on' : '')} onClick={() => pick(t.id)} style={{ '--p': p }}>
+            <span className="rm-pill-ring" />{t.short === 'X' ? 'Crossover' : t.title}
+          </button>) })}
+        {!mine.includes(track) && <button className="rm-pill on">{current ? current.title : 'Journey'}</button>}
+      </div>
+      <Sheet open={open} onClose={() => setOpen(false)} title="Tracks">
+        <div className="rm-sheet">
+          <div className="rm-side-label">My tracks</div>
+          <div className="rm-tgrid">{myTracks.map((t) => <Card key={t.id} t={t} />)}</div>
+          <div className="rm-side-label">Other tracks</div>
+          <div className="rm-tgrid">{rm.tracks.filter((t) => !mine.includes(t.id)).map((t) => <Card key={t.id} t={t} />)}</div>
+          <div className="rm-side-label">Blended</div>
+          <div className="rm-tgrid"><button className={'rm-tcard' + (track === 'journey' ? ' on' : '')} onClick={() => pick('journey')}><span className="rm-tcard-g">✕</span><b>Crossover journey</b><em>all tracks in order</em></button></div>
+        </div>
+      </Sheet>
     </div>
   )
 }

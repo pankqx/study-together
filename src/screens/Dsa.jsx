@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useStore } from '../store.jsx'
 import { PRONTOPY_URL } from '../config.js'
 import { colorOf, nickOf, initial, timeAgo, today, addDays } from '../lib/logic.js'
-import { slug } from '../data/roadmap.js'
+import { slug, DSA_TRACK } from '../data/roadmap.js'
 
 const DIFF = { easy: 'Easy', medium: 'Medium', hard: 'Hard' }
 const PLATFORMS = [
@@ -40,7 +40,7 @@ export default function Dsa() {
   const [q, setQ] = useState('')
   useEffect(() => be.watchCol('problems', setRows, { orderBy: 'at', desc: true, limit: 1500 }), [be])
 
-  const patterns = rm.TRACK.dsa?.nodes || []
+  const patterns = DSA_TRACK.nodes
   const patName = Object.fromEntries(patterns.map((p) => [p.id, p.title]))
 
   // group every log by problem, so a problem solved by all three shows once
