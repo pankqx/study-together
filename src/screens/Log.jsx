@@ -4,6 +4,7 @@ import { DEL, uid8 } from '../lib/backend.js'
 import { colorOf, nickOf, timeAgo, today, addDays } from '../lib/logic.js'
 import { Avatar } from '../ui.jsx'
 import ProofWall from './Feed.jsx'
+import { BUILD } from '../data/builds.js'
 
 // ─────────────────────────────────────────────────────────────
 //  Learning log — what each of us learnt, in our own words,
@@ -101,6 +102,7 @@ function Editor({ logs, onDone }) {
   const [summary, setSummary] = useState('')
   const [confused, setConfused] = useState('')
   const [teachText, setTeachText] = useState('')
+  const buildsNow = Object.entries(me?.builds || {}).filter(([pid, b]) => BUILD[pid] && b.status).map(([pid, b]) => `Demo: ${BUILD[pid].title}${b.status === 'shipped' ? ' (shipped)' : ''}`).slice(0, 4)
   const [extra, setExtra] = useState('')
   const [saved, setSaved] = useState(null)
   const [loaded, setLoaded] = useState(false)
@@ -176,6 +178,8 @@ function Editor({ logs, onDone }) {
           <textarea rows={3} value={teachText} onChange={(e) => setTeachText(e.target.value)} placeholder={'How Spark broadcast joins avoid a shuffle\nWhy dbt incremental models need a unique key'} />
           {!!studied.length && <div className="lg-suggest"><span className="rm-meta">Quick add:</span>{studied.map((st) => (
             <button key={st.key} className="lg-chip" onClick={() => setTeachText((t) => (t.trim() ? t.trim() + '\n' : '') + st.title)}>＋ {st.title}</button>))}</div>}
+          {!!buildsNow.length && <div className="lg-suggest"><span className="rm-meta">Demo a build:</span>{buildsNow.map((t) => (
+            <button key={t} className="lg-chip" onClick={() => setTeachText((x) => (x.trim() ? x.trim() + '\n' : '') + t)}>＋ {t}</button>))}</div>}
         </div>
       </section>
 

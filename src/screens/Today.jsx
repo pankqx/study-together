@@ -6,6 +6,7 @@ import { stats, rank, nextUp, colorOf, nickOf, today, addDays, myTracksOf, strea
 import { Avatar, Bar, Check } from '../ui.jsx'
 import { Echo } from '../art.jsx'
 import { useLogs, useTeam } from './Log.jsx'
+import { BUILD } from '../data/builds.js'
 import { personalBoardId, useEnsurePersonalBoards } from '../lib/boards.js'
 
 const hello = () => { const h = new Date().getHours(); return h < 5 ? 'Still up' : h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening' }
@@ -56,6 +57,8 @@ export default function Today() {
           {crew.map((u) => <div key={u.id} className={'dsa-who' + (u.dsa?.[today()] ? ' done' : '')} style={{ '--c': colorOf(u) }}><Avatar u={u} size={36} /><small>{u.dsa?.[today()] ? 'done' : '…'}</small></div>)}
         </div>
       </section>
+
+      <BuildingCard />
 
       <RecallCard />
 
@@ -146,6 +149,26 @@ function LogCard() {
 // "explain it again" prompts. Retrieval spaced over time is one of the best-supported
 // ways to make learning stick.
 const INTERVALS = [1, 3, 7, 21, 60]
+function BuildingCard() {
+  const { me } = useStore()
+  const live = Object.entries(me?.builds || {}).filter(([pid, b]) => b.status === 'building' && BUILD[pid])
+  if (!live.length) return (
+    <section className="card build-card empty">
+      <div><span className="tag">build & learn</span><h2>Nothing on the bench.</h2><p className="dim">You learn it properly by building it. Pick the next rung on your ladder.</p></div>
+      <a className="btn solid" href="#build">Pick a build →</a>
+    </section>)
+  return (
+    <section className="card build-card">
+      <div className="row between"><span className="tag">building now</span><a className="mono" href="#build">all builds →</a></div>
+      {live.slice(0, 2).map(([pid, b]) => { const p = BUILD[pid]; const n = Object.values(b.steps || {}).filter(Boolean).length; const next = p.steps.findIndex((_, i) => !b.steps?.[i]); return (
+        <a key={pid} className="build-now" href={`#build/${p.track}/${pid}`}>
+          <b>{p.title}</b>
+          <small className="dim">{next >= 0 ? 'Next: ' + p.steps[next] : 'All milestones done — write the retro and ship it'}</small>
+          <Bar pct={n / p.steps.length} color={colorOf(me)} h={6} />
+        </a>) })}
+    </section>)
+}
+
 function RecallCard() {
   const { me, rm, api } = useStore()
   const [open, setOpen] = useState(null)
@@ -161,7 +184,15 @@ function RecallCard() {
     const again = r?.again && r.again <= todayISO
     if (again || INTERVALS.includes(age)) due.push({ cid, age, again, ...text[cid] })
   }
-  due.sort((a, b) => (b.again - a.again) || (a.age - b.age))
+  for (const [pid, b] of Object.entries(me?.builds || {})) {
+    if (b.status !== 'shipped' || !BUILD[pid]) continue
+    const cid = 'b__' + pid, r = me?.recall?.[cid]
+    if (r && today(new Date(r.at)) === todayISO) continue
+    const age = Math.round((new Date(todayISO + 'T12:00') - new Date(today(new Date(b.shipped)) + 'T12:00')) / 864e5)
+    const again = r?.again && r.again <= todayISO
+    if (again || [7, 30, 90].includes(age)) due.push({ cid, age, again, build: true, c: `Explain “${BUILD[pid].title}”: the architecture, the hardest bug, what breaks at 10×`, nd: { title: 'Your build · 2 minutes, out loud' } })
+  }
+  due.sort((a, b) => (b.again - a.again) || (!!b.build - !!a.build) || (a.age - b.age))
   const show = due.slice(0, 4)
   if (!show.length) return null
   return (
@@ -172,7 +203,7 @@ function RecallCard() {
       <ul className="recall-list">
         {show.map((x) => (
           <li key={x.cid}>
-            <div><b>{x.c}</b><small className="mono dim">{x.nd.title} · {x.again ? 'again today' : `ticked ${x.age} day${x.age > 1 ? 's' : ''} ago`}</small></div>
+            <div><b>{x.c}</b><small className="mono dim">{x.nd.title} · {x.again ? 'again today' : `${x.build ? 'shipped' : 'ticked'} ${x.age} day${x.age > 1 ? 's' : ''} ago`}</small></div>
             <div className="recall-btns">
               <button className="btn" onClick={() => api.recall(x.cid, true)}>Got it</button>
               <button className="btn ghost" onClick={() => api.recall(x.cid, false)}>Shaky</button>

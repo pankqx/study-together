@@ -71,6 +71,12 @@ export function StoreProvider({ children }) {
       deleteProblem: (id) => be.delDoc('problems/' + id),
       setStudying: (until, label) => be.updateDoc(path, { studying: until ? { until, label: label || '' } : DEL }),
       recall: (cid, ok) => be.updateDoc(path, { ['recall.' + cid]: { at: Date.now(), ok, again: ok ? null : today(new Date(Date.now() + 864e5)) }, ...bump() }),
+      // Build & learn — state lives on your user doc under builds.{projectId}
+      buildSet: (pid, patch) => be.updateDoc(path, Object.fromEntries(Object.entries(patch).map(([k, v]) => [`builds.${pid}.${k}`, v]))),
+      buildTick: (pid, key, on) => be.updateDoc(path, { [`builds.${pid}.${key}`]: on ? Date.now() : DEL, ...(on ? bump() : {}) }),
+      buildStart: (pid) => be.updateDoc(path, { [`builds.${pid}.status`]: 'building', [`builds.${pid}.started`]: Date.now(), ...bump() }),
+      buildShip: (pid) => be.updateDoc(path, { [`builds.${pid}.status`]: 'shipped', [`builds.${pid}.shipped`]: Date.now(), ...bump(3) }),
+      buildDrop: (pid) => be.updateDoc(path, { ['builds.' + pid]: DEL }),
       setCurrent: (nodeId) => be.updateDoc(path, { current: nodeId || DEL }),
       setMode: (m) => be.updateDoc(path, { rmMode: m }),
       updateProfile: (p) => be.updateDoc(path, p),
@@ -129,6 +135,12 @@ function seedDemo(be) {
       }
       u.dsa = {}; for (let d = 0; d < [18, 9, 4][i]; d++) u.dsa[today(new Date(Date.now() - d * 864e5))] = 1
       u.current = ['db-sql2', 'de-spark', 'cld-iam'][i]
+      const bt = Date.now()
+      u.builds = [
+        { 'fe-1': { status: 'shipped', started: bt - 12 * 864e5, shipped: bt - 8 * 864e5, steps: { 0: 1, 1: 1, 2: 1, 3: 1, 4: 1, 5: 1 }, pro: { 0: 1, 1: 1, 2: 1, 3: 1, 4: 1 }, repo: 'https://github.com/pankqx', notes: 'Grid for page sections, flex inside cards.', retro: { bug: 'Hero overflowed at 375px — a min-width on an image.', trade: 'Skipped animations to ship on time.', scale: 'Long translated copy breaks the nav.' } }, 'de-1': { status: 'building', started: bt - 3 * 864e5, steps: { 0: 1, 1: 1 } } },
+        { 'be-2': { status: 'shipped', started: bt - 15 * 864e5, shipped: bt - 9 * 864e5, steps: { 0: 1, 1: 1, 2: 1, 3: 1, 4: 1, 5: 1 }, pro: { 0: 1, 1: 1, 2: 1, 3: 1, 4: 1, 5: 1 }, repo: 'https://github.com/', notes: 'Counter + base62 instead of random codes: no collision checks needed.', retro: { bug: 'Off-by-one in base62 decode.', trade: 'Predictable codes in exchange for speed.', scale: 'Single counter becomes a bottleneck — use ranges per server.' } }, 'de-1': { status: 'building', started: bt - 5 * 864e5, steps: { 0: 1, 1: 1, 2: 1, 3: 1 } } },
+        { 'cl-1': { status: 'shipped', started: bt - 10 * 864e5, shipped: bt - 7 * 864e5, steps: { 0: 1, 1: 1, 2: 1, 3: 1, 4: 1, 5: 1 }, notes: 'Bucket stays private; CloudFront reads it with OAC.', retro: { bug: 'Certificate had to be in us-east-1.', trade: 'No server-side logic at all.', scale: 'Costs are mostly bandwidth — cache longer.' } }, 'dm-1': { status: 'building', started: bt - 2 * 864e5, steps: { 0: 1 } } },
+      ][i]
     })
     const t = Date.now()
     store['posts/p1'] = { uid: 'demo-1', at: t - 3 * 36e5, text: 'Finally get window functions. LAG() is magic. 🧠', node: 'db-sql2', reactions: { fire: { 'demo-0': true } } }
