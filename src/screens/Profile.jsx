@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useStore } from '../store.jsx'
-import { COLORS, colorOf, nickOf, charOf, stats, rank } from '../lib/logic.js'
+import { COLORS, colorOf, nickOf, charOf, stats, rank, myTracksOf } from '../lib/logic.js'
 import { CHARACTERS, Bust } from '../people.jsx'
 import { Sheet } from '../ui.jsx'
 
@@ -38,6 +38,15 @@ export default function Profile({ open, onClose }) {
 
         <div className="pf-field"><span>Your colour</span>
           <div className="pf-colors">{PALETTE.map((c) => <button key={c} className={'pf-color' + (col === c ? ' on' : '')} style={{ background: c }} onClick={() => api.updateProfile({ color: c })} aria-label={c} />)}</div>
+        </div>
+
+        <div className="pf-field"><span>My tracks</span>
+          <div className="track-pick">
+            {rm.tracks.map((t) => { const on = myTracksOf(me).includes(t.id); return (
+              <button key={t.id} className={'track-opt' + (on ? ' on' : '')} onClick={() => api.setMyTracks(on ? myTracksOf(me).filter((x) => x !== t.id) : [...myTracksOf(me), t.id])}>
+                <span className="track-opt-box">{on ? '✓' : ''}</span><span><b>{t.title}</b><small>{t.nodes.length} topics</small></span>
+              </button>) })}
+          </div>
         </div>
 
         <div className="pf-field"><span>Theme</span>

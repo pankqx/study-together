@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useStore } from '../store.jsx'
 import { LEVELS, nodeProgress, trackProgress, conceptId, cText } from '../data/roadmap.js'
 import { PRONTOPY_URL } from '../config.js'
-import { colorOf, nickOf, initial, timeAgo } from '../lib/logic.js'
+import { colorOf, nickOf, initial, timeAgo, myTracksOf } from '../lib/logic.js'
 import { Composer } from './Feed.jsx'
 import { go } from '../App.jsx'
 
@@ -11,8 +11,10 @@ const host = (u) => { try { return new URL(u).hostname.replace(/^www\./, '') } c
 const href = (u) => (u === 'prontopy' ? PRONTOPY_URL : u)
 const statusOf = (p) => (p.pct === 1 ? 'done' : p.done ? 'doing' : 'todo')
 
-export default function Roadmap({ track = 'journey', node }) {
+export default function Roadmap({ track: trackParam, node }) {
   const { me, rm, mode, api, crew } = useStore()
+  const mine = myTracksOf(me)
+  const track = trackParam || mine.find((id) => id !== 'dsa') || 'journey'
   const [q, setQ] = useState('')
   const [edit, setEdit] = useState(false)
   const [showLog, setShowLog] = useState(false)
@@ -42,13 +44,17 @@ export default function Roadmap({ track = 'journey', node }) {
       <div className="rm-body">
         <aside className="rm-side">
           <select className="rm-select" value={track} onChange={(e) => go('roadmap', e.target.value)}>
-            <option value="journey">Crossover journey</option>
-            {rm.tracks.map((x) => <option key={x.id} value={x.id}>{x.title}</option>)}
+            <optgroup label="My tracks">{rm.tracks.filter((x) => mine.includes(x.id)).map((x) => <option key={x.id} value={x.id}>{x.title}</option>)}</optgroup>
+            <optgroup label="Other tracks">{rm.tracks.filter((x) => !mine.includes(x.id)).map((x) => <option key={x.id} value={x.id}>{x.title}</option>)}</optgroup>
+            <option value="journey">Crossover journey (blended)</option>
           </select>
           <nav className="rm-tracks">
+            <div className="rm-side-label">My tracks</div>
+            {rm.tracks.filter((x) => mine.includes(x.id)).map((x) => <TrackLink key={x.id} id={x.id} label={x.title} pct={trackProgress(x, me?.progress).pct} active={track === x.id} />)}
+            <div className="rm-side-label">Other tracks</div>
+            {rm.tracks.filter((x) => !mine.includes(x.id)).map((x) => <TrackLink key={x.id} id={x.id} label={x.title} pct={trackProgress(x, me?.progress).pct} active={track === x.id} />)}
+            <div className="rm-side-label">Blended</div>
             <TrackLink id="journey" label="Crossover journey" pct={null} active={track === 'journey'} />
-            <div className="rm-side-label">Tracks</div>
-            {rm.tracks.map((x) => <TrackLink key={x.id} id={x.id} label={x.title} pct={trackProgress(x, me?.progress).pct} active={track === x.id} />)}
           </nav>
         </aside>
 
@@ -110,7 +116,8 @@ function CrewLine({ t, nodes }) {
 }
 
 function TrackView({ t, edit, open }) {
-  const { me } = useStore()
+  const { me, api } = useStore()
+  const mineList = myTracksOf(me), inMine = mineList.includes(t.id)
   const [filter, setFilter] = useState('all')
   const [adding, setAdding] = useState(false)
   const tp = trackProgress(t, me?.progress)
@@ -125,6 +132,7 @@ function TrackView({ t, edit, open }) {
           <h2>{t.title}</h2>
           <p className="rm-blurb">{t.blurb}</p>
           <p className="rm-meta">{t.nodes.length} topics · {tp.total} concepts · {tp.done} done · {Math.round(tp.pct * 100)}%</p>
+          <button className={'rm-btn rm-follow' + (inMine ? ' on' : '')} onClick={() => api.setMyTracks(inMine ? mineList.filter((x) => x !== t.id) : [...mineList, t.id])}>{inMine ? '✓ In my tracks' : '＋ Add to my tracks'}</button>
         </div>
         <CrewLine t={t} />
       </div>

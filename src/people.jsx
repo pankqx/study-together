@@ -8,11 +8,22 @@
 
 const INK = '#1b1c20'
 
+const Defs = () => (
+  <defs>
+    <linearGradient id="hairPank" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#3b2c26" /><stop offset="1" stopColor="#130f0d" /></linearGradient>
+    <linearGradient id="hairRavi" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#4a362c" /><stop offset=".6" stopColor="#1a1411" /></linearGradient>
+    <linearGradient id="hairMerel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#4b3127" /><stop offset=".55" stopColor="#24170f" /><stop offset="1" stopColor="#3a241a" /></linearGradient>
+    <radialGradient id="glow"><stop offset="0" stopColor="#fff" stopOpacity=".85" /><stop offset="1" stopColor="#fff" stopOpacity="0" /></radialGradient>
+  </defs>
+)
+const Blush = ({ y, dx = 22, c = '#f0907e', o = 0.38 }) => <g fill={c} opacity={o}><ellipse cx={-dx} cy={y} rx="8" ry="4.5" /><ellipse cx={dx} cy={y} rx="8" ry="4.5" /></g>
+
 function Specs() {
-  const skin = '#6f4431', shade = '#5a3525', dark = '#3f2418', hair = '#121212'
+  const skin = '#f1c8a8', shade = '#e0aa86', dark = '#a8735a', hair = 'url(#hairPank)'
   const top = '#1f2024', topHi = '#2c2e34', jean = '#a9c6e3', jeanS = '#8eaed0', jeanHi = '#cfe0f1'
   return (
     <g>
+      <Defs />
       {/* jeans */}
       <path d="M-58 -286 L58 -286 L56 -22 L12 -22 L2 -210 L-8 -22 L-56 -22 Z" fill={jean} />
       <path d="M28 -270 L36 -30 L56 -26 L58 -286 Z" fill={jeanS} />
@@ -49,7 +60,8 @@ function Specs() {
       <ellipse cx="38" cy="-560" rx="8" ry="12" fill={shade} />
       <path d="M-38 -576 C-40 -620 40 -620 38 -576 L36 -546 C32 -520 16 -508 0 -508 C-16 -508 -32 -520 -36 -546 Z" fill={skin} />
       {/* stubble */}
-      <path d="M-35 -548 C-32 -522 -16 -510 0 -510 C16 -510 32 -522 35 -548 C28 -530 16 -524 0 -524 C-16 -524 -28 -530 -35 -548 Z" fill={dark} opacity=".55" />
+      <path d="M-35 -548 C-32 -522 -16 -510 0 -510 C16 -510 32 -522 35 -548 C28 -530 16 -524 0 -524 C-16 -524 -28 -530 -35 -548 Z" fill={dark} opacity=".22" />
+      <Blush y={-546} dx={24} />
       {/* hair — wavy, volume on top */}
       <g fill={hair}>
         <path d="M-40 -566 C-48 -606 -22 -632 4 -630 C30 -630 48 -610 40 -566 C36 -586 26 -596 10 -598 C-8 -600 -28 -592 -40 -566 Z" />
@@ -63,10 +75,11 @@ function Specs() {
         <rect x="-33" y="-572" width="28" height="19" rx="5" /><rect x="5" y="-572" width="28" height="19" rx="5" />
         <path d="M-5 -566 C-2 -569 2 -569 5 -566 M-33 -566 L-40 -568 M33 -566 L40 -568" fill="none" />
       </g>
+      <path d="M-29 -569 L-22 -569 M9 -569 L16 -569" stroke="#fff" strokeWidth="2" strokeLinecap="round" opacity=".8" />
       {/* nose + grin */}
       <path d="M-1 -556 C-3 -548 -8 -542 -6 -539 C-2 -537 3 -538 6 -540" stroke={dark} strokeWidth="3" fill="none" strokeLinecap="round" />
       <path d="M-17 -530 C-8 -526 8 -526 17 -530 C14 -518 6 -514 0 -514 C-6 -514 -14 -518 -17 -530 Z" fill="#fff" />
-      <path d="M-17 -530 C-8 -526 8 -526 17 -530" stroke={dark} strokeWidth="2" fill="none" />
+      <path d="M-17 -530 C-8 -526 8 -526 17 -530 C14 -518 6 -514 0 -514 C-6 -514 -14 -518 -17 -530 Z" stroke="#b35a50" strokeWidth="2" fill="none" />
       {/* fist resting on the chin */}
       <path d="M-26 -486 C-30 -500 -20 -510 -6 -508 C4 -506 6 -496 2 -490 C-2 -482 -18 -478 -26 -486 Z" fill={skin} />
       <path d="M-18 -500 C-13 -504 -6 -504 -2 -500 M-20 -492 C-15 -495 -8 -495 -4 -492" stroke={shade} strokeWidth="2.2" fill="none" strokeLinecap="round" />
@@ -75,10 +88,11 @@ function Specs() {
 }
 
 function Polo() {
-  const skin = '#8d5a3c', shade = '#774a30', dark = '#2a1b14', hair = '#121212'
+  const skin = '#f5d3b8', shade = '#e4b594', dark = '#5e4234', hair = 'url(#hairRavi)'
   const polo = '#edeae5', poloS = '#d7d2ca', trim = '#24252a', pants = '#1c1d21', pantsHi = '#2b2d33'
   return (
     <g>
+      <Defs />
       {/* trousers */}
       <path d="M-46 -334 L46 -334 L44 -20 L8 -20 L1 -246 L-6 -20 L-44 -20 Z" fill={pants} />
       <path d="M-24 -300 L-26 -40 M22 -300 L24 -40" stroke={pantsHi} strokeWidth="4" />
@@ -124,7 +138,10 @@ function Polo() {
       {/* brows, eyes */}
       <path d="M-26 -661 L-9 -660 M9 -660 L26 -661" stroke={hair} strokeWidth="4" strokeLinecap="round" />
       <ellipse cx="-16" cy="-647" rx="7" ry="3.6" fill="#fff" /><ellipse cx="16" cy="-647" rx="7" ry="3.6" fill="#fff" />
-      <circle cx="-16" cy="-647" r="3.2" fill={INK} /><circle cx="16" cy="-647" r="3.2" fill={INK} />
+      <circle cx="-16" cy="-647" r="3.4" fill="#3a2a22" /><circle cx="16" cy="-647" r="3.4" fill="#3a2a22" />
+      <circle cx="-15" cy="-648.4" r="1.1" fill="#fff" /><circle cx="17" cy="-648.4" r="1.1" fill="#fff" />
+      <Blush y={-628} dx={23} o={0.3} />
+      <path d="M-18 -712 C-6 -718 10 -718 22 -708" stroke="#7a5a4a" strokeWidth="3" strokeLinecap="round" fill="none" opacity=".7" />
       {/* nose */}
       <path d="M0 -640 C-2 -634 -5 -629 -4 -626 C-1 -624 3 -624 5 -626" stroke={dark} strokeWidth="2.2" fill="none" strokeLinecap="round" opacity=".55" />
       {/* moustache, mouth, goatee */}
@@ -136,10 +153,11 @@ function Polo() {
 }
 
 function Waves() {
-  const skin = '#bb825f', shade = '#a26c4c', dark = '#5b3424', hair = '#17110f', hairHi = '#2c211c'
+  const skin = '#f8d9c4', shade = '#ebbd9f', dark = '#a2634c', hair = 'url(#hairMerel)', hairHi = '#6b4a3c'
   const top = '#6c4533', topS = '#5a3828', jean = '#45474d', jeanHi = '#62656c'
   return (
     <g>
+      <Defs />
       {/* back hair */}
       <path d="M-44 -580 C-66 -560 -62 -530 -70 -506 C-78 -482 -64 -470 -72 -448 C-80 -428 -66 -410 -52 -418 C-44 -424 -48 -440 -40 -452 L40 -452 C48 -440 44 -424 52 -418 C66 -410 80 -428 72 -448 C64 -470 78 -482 70 -506 C62 -530 66 -560 44 -580 Z" fill={hair} />
       {/* wide-leg jeans */}
@@ -175,19 +193,22 @@ function Waves() {
       {/* brows, eyes */}
       <path d="M-23 -566 C-18 -569 -12 -569 -8 -567 M8 -567 C12 -569 18 -569 23 -566" stroke={hair} strokeWidth="3" strokeLinecap="round" fill="none" />
       <path d="M-22 -553 C-18 -558 -11 -558 -8 -553 M8 -553 C11 -558 18 -558 22 -553" stroke={INK} strokeWidth="3.4" strokeLinecap="round" fill="none" />
+      <path d="M-22 -553 L-26 -557 M-20 -556 L-23 -560 M22 -553 L26 -557 M20 -556 L23 -560" stroke={INK} strokeWidth="2" strokeLinecap="round" />
+      <Blush y={-532} dx={21} c="#f07f88" o={0.42} />
       {/* nose + smile */}
       <path d="M0 -550 C-1 -542 -5 -536 -3 -533 C0 -531 3 -532 5 -534" stroke={dark} strokeWidth="2.4" fill="none" strokeLinecap="round" opacity=".7" />
       <path d="M-14 -522 C-7 -519 7 -519 14 -522 C11 -511 5 -508 0 -508 C-5 -508 -11 -511 -14 -522 Z" fill="#fff" />
-      <path d="M-14 -522 C-7 -519 7 -519 14 -522 C11 -511 5 -508 0 -508 C-5 -508 -11 -511 -14 -522 Z" stroke="#8a3f33" strokeWidth="2" fill="none" />
-      <ellipse cx="-20" cy="-530" rx="6" ry="3" fill="#e27d6a" opacity=".35" /><ellipse cx="20" cy="-530" rx="6" ry="3" fill="#e27d6a" opacity=".35" />
+      <path d="M-14 -522 C-7 -519 7 -519 14 -522 C11 -511 5 -508 0 -508 C-5 -508 -11 -511 -14 -522 Z" stroke="#d0566a" strokeWidth="2.6" fill="none" />
+      <path d="M-30 -592 C-22 -600 -10 -604 -2 -604" stroke="#8a6252" strokeWidth="3" strokeLinecap="round" fill="none" opacity=".8" />
+      <path d="M30 -592 C22 -600 10 -604 2 -604" stroke="#8a6252" strokeWidth="3" strokeLinecap="round" fill="none" opacity=".6" />
     </g>
   )
 }
 
 export const CHARACTERS = {
-  specs: { C: Specs, label: 'Specs & sweatshirt', full: '-110 -650 220 660', bust: '-62 -640 124 124' },
-  polo: { C: Polo, label: 'Polo', full: '-120 -735 240 745', bust: '-62 -728 124 124' },
-  waves: { C: Waves, label: 'Long waves', full: '-110 -620 220 630', bust: '-62 -618 124 124' },
+  specs: { C: Specs, label: 'Pank', full: '-110 -650 220 660', bust: '-62 -640 124 124' },
+  polo: { C: Polo, label: 'Ravi', full: '-120 -735 240 745', bust: '-62 -728 124 124' },
+  waves: { C: Waves, label: 'Merel', full: '-110 -620 220 630', bust: '-62 -618 124 124' },
 }
 
 export function Person({ who = 'polo', height = 320, sun, className = '' }) {
@@ -206,6 +227,7 @@ export function Bust({ who, size = 32, bg }) {
   if (!ch) return null
   return (
     <svg viewBox={ch.bust} width={size} height={size} aria-hidden style={{ display: 'block' }}>
+      <Defs />
       {bg && <rect x="-200" y="-900" width="400" height="900" fill={bg} />}
       <ch.C />
     </svg>
@@ -216,8 +238,13 @@ export function Bust({ who, size = 32, bg }) {
 export function CrewArt({ order = ['specs', 'polo', 'waves'], colors = [], height = 420, className = '' }) {
   const xs = [-170, 0, 170]
   return (
-    <svg className={'crew-art ' + className} viewBox="-300 -760 600 770" style={{ height }} role="img" aria-label="The three of us">
-      {order.map((who, i) => colors[i] && <circle key={'s' + i} cx={xs[i]} cy={who === 'polo' ? -520 : -440} r={who === 'polo' ? 118 : 104} fill={colors[i]} />)}
+    <svg className={'crew-art ' + className} viewBox="-310 -770 620 780" style={{ height }} role="img" aria-label="Pank, Ravi and Merel">
+      <Defs />
+      {order.map((who, i) => colors[i] && <g key={'s' + i}>
+        <circle cx={xs[i]} cy={who === 'polo' ? -520 : -440} r={who === 'polo' ? 150 : 134} fill="url(#glow)" opacity=".55" />
+        <circle cx={xs[i]} cy={who === 'polo' ? -520 : -440} r={who === 'polo' ? 118 : 104} fill={colors[i]} /></g>)}
+      <g fill="#fff" opacity=".9">{[[-268, -640, 9], [250, -700, 12], [120, -730, 7], [-120, -690, 8], [285, -520, 6], [-285, -480, 7]].map(([x, y, r], k) => (
+        <path key={k} d={`M${x} ${y - r * 2} Q${x} ${y} ${x + r * 2} ${y} Q${x} ${y} ${x} ${y + r * 2} Q${x} ${y} ${x - r * 2} ${y} Q${x} ${y} ${x} ${y - r * 2} Z`} className="sparkle" style={{ animationDelay: k * 0.4 + 's' }} />))}</g>
       {[0, 2, 1].map((i) => <g key={i} transform={`translate(${xs[i]} 0)`}>{(() => { const C = CHARACTERS[order[i]].C; return <C /> })()}</g>)}
     </svg>
   )

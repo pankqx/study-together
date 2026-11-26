@@ -12,6 +12,10 @@ service cloud.firestore {
     match /roadmaps/team     { allow read, write: if signedIn(); }         // shared team roadmap
     match /roadmaps/{uid}    { allow read: if signedIn(); allow write: if isMe(uid); }
     match /roadmapLog/{id}   { allow read, create: if signedIn(); }
+    match /problems/{id} {                                                 // DSA log
+      allow read, create: if signedIn();
+      allow update, delete: if signedIn() && resource.data.uid == request.auth.uid;
+    }
     match /posts/{id} {
       allow read, create, update: if signedIn();
       allow delete: if signedIn() && resource.data.uid == request.auth.uid;

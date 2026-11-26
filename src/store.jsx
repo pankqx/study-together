@@ -63,6 +63,12 @@ export function StoreProvider({ children }) {
       setNodeDone: (nd, on) => be.updateDoc(path, { ...Object.fromEntries(nd.concepts.map((c) => ['progress.' + conceptId(nd.id, c), on ? Date.now() : DEL])), ...(on ? bump() : {}) }),
       toggleDSA: (on) => be.updateDoc(path, { ['dsa.' + today()]: on ? Date.now() : DEL, ...(on ? bump() : {}) }),
       setFocus: (focus) => be.updateDoc(path, { focus }),
+      setMyTracks: (myTracks) => be.updateDoc(path, { myTracks }),
+      finishOnboarding: (p) => be.updateDoc(path, { ...p, onboarded: true }),
+      // DSA log — one doc per solved problem
+      logProblem: async (pr) => { await be.addDoc('problems', { ...pr, uid: auth.uid, at: Date.now() }); await be.updateDoc(path, { ['dsa.' + today()]: Date.now(), ...bump() }) },
+      updateProblem: (id, patch) => be.updateDoc('problems/' + id, patch),
+      deleteProblem: (id) => be.delDoc('problems/' + id),
       setStudying: (until, label) => be.updateDoc(path, { studying: until ? { until, label: label || '' } : DEL }),
       setCurrent: (nodeId) => be.updateDoc(path, { current: nodeId || DEL }),
       setMode: (m) => be.updateDoc(path, { rmMode: m }),
@@ -121,7 +127,7 @@ function seedDemo(be) {
         nd.concepts.forEach((cc) => { if (Math.random() < shares[i] * trackBias) u.progress[conceptId(nd.id, cc)] = Date.now() - Math.random() * 30 * 864e5 })
       }
       u.dsa = {}; for (let d = 0; d < [18, 9, 4][i]; d++) u.dsa[today(new Date(Date.now() - d * 864e5))] = 1
-      u.current = ['db-sql2', 'ops-docker', 'fe-react'][i]
+      u.current = ['db-sql2', 'de-spark', 'cld-iam'][i]
     })
     const t = Date.now()
     store['posts/p1'] = { uid: 'demo-1', at: t - 3 * 36e5, text: 'Finally get window functions. LAG() is magic. 🧠', node: 'db-sql2', reactions: { fire: { 'demo-0': true } } }
@@ -131,6 +137,10 @@ function seedDemo(be) {
     store['messages/m2'] = { uid: 'demo-0', at: t - 2 * 36e5 + 60e3, text: 'me — doing Airflow DAGs after DSA', reactions: { fire: { 'demo-1': true } } }
     store['messages/m3'] = { uid: 'demo-2', at: t - 1.5 * 36e5, text: 'join the study room at 9, pomodoro race 🍅', reactions: {} }
     store['roadmaps/team'] = { nodes: { 'n-demo1': { id: 'n-demo1', track: 'de', title: 'Data engineering interview prep', level: 'pro', doneWhen: 'You can answer 30 common DE interview questions out loud.', concepts: [{ id: 'c-1', text: 'SQL interview patterns' }, { id: 'c-2', text: 'Pipeline design questions' }, { id: 'c-3', text: 'Spark tuning questions' }], resources: [{ t: 'DataLemur', u: 'https://datalemur.com/' }], editedBy: 'demo-1', editedAt: t - 5 * 36e5 } } }
+    const PR = [['two-sum', 'Two Sum', 'easy', 'dsa-hash', 0, 'hash map of value → index'], ['valid-parentheses', 'Valid Parentheses', 'easy', 'dsa-stack', 0, ''], ['longest-substring-without-repeating-characters', 'Longest Substring Without Repeating Characters', 'medium', 'dsa-two', 1, 'sliding window + last-seen map'],
+      ['two-sum', 'Two Sum', 'easy', 'dsa-hash', 1, ''], ['number-of-islands', 'Number of Islands', 'medium', 'dsa-graph', 1, 'BFS from every unvisited land cell'], ['merge-k-sorted-lists', 'Merge k Sorted Lists', 'hard', 'dsa-heap', 1, 'heap of (val, i, node)'],
+      ['reverse-linked-list', 'Reverse Linked List', 'easy', 'dsa-ll', 2, 'draw it first'], ['binary-search', 'Binary Search', 'easy', 'dsa-bs', 0, ''], ['climbing-stairs', 'Climbing Stairs', 'easy', 'dsa-dp', 0, 'it is fibonacci'], ['coin-change', 'Coin Change', 'medium', 'dsa-dp', 1, '']]
+    PR.forEach(([slug, title, difficulty, pattern, who, note], k) => { store['problems/pr' + k] = { uid: 'demo-' + who, slug, title, url: `https://leetcode.com/problems/${slug}/`, platform: 'LeetCode', difficulty, pattern, status: k === 2 ? 'revisit' : 'solved', note, at: t - k * 7 * 36e5 } })
     store['roadmapLog/l1'] = { uid: 'demo-1', scope: 'team', action: 'added', title: 'Data engineering interview prep', track: 'de', at: t - 5 * 36e5 }
   })
 }

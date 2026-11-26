@@ -33,9 +33,9 @@ export default function Landing({ onSignIn, denied }) {
 
       <section className="l-pitch">
         <div className="l-pitch-in">
-          <h1>Three friends.<br />One roadmap.<br /><span className="hl">No excuses.</span></h1>
+          <h1>Three friends.<br />Our own roadmaps.<br /><span className="hl">No excuses.</span></h1>
           <div>
-            <p>A private study headquarters for going from full stack to data engineering, cloud and AI — together. Everyone moves at their own pace. Everyone can see where the others are.</p>
+            <p>A private study headquarters for Pank, Ravi and Merel — front end, back end, data engineering, AI, cloud and digital marketing. Everyone moves at their own pace. Everyone can see where the others are.</p>
             <button className="btn big sky" onClick={onSignIn}><GoogleG /> Continue with Google</button>
             {denied && <p className="warn">{denied} can't sign in yet.</p>}
           </div>
@@ -48,7 +48,7 @@ export default function Landing({ onSignIn, denied }) {
           {order.map((who) => (
             <figure key={who} className="l-card">
               <div className="l-card-art"><Person who={who} height={300} sun={colorFor(who)} /></div>
-              <figcaption><b>{nickFor(who)}</b><span>full stack → data engineering</span></figcaption>
+              <figcaption><b>{nickFor(who)}</b><span>{CREW[CHAR_DEFAULT.indexOf(who)]?.tagline}</span></figcaption>
             </figure>))}
         </div>
       </section>

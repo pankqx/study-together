@@ -1,7 +1,7 @@
 import { BASE, NODE, conceptId, nodeProgress, trackProgress } from '../data/roadmap.js'
 import { CREW } from '../config.js'
 
-export const COLORS = ['#ef3b2d', '#ffc93c', '#d29457', '#7b61ff', '#18b38a'] // pepperoni, cheese, crust
+export const COLORS = ['#ffc93c', '#ef3b2d', '#d29457', '#7b61ff', '#18b38a'] // Pank cheese, Ravi pepperoni, Merel crust
 export const inkOn = (c) => (['#ffc93c', '#d29457'].includes(c) ? '#202227' : '#ffffff')
 export const today = (d = new Date()) => { const x = new Date(d); x.setMinutes(x.getMinutes() - x.getTimezoneOffset()); return x.toISOString().slice(0, 10) }
 export const addDays = (iso, n) => { const d = new Date(iso + 'T12:00:00'); d.setDate(d.getDate() + n); return today(d) }
@@ -9,7 +9,7 @@ export const addDays = (iso, n) => { const d = new Date(iso + 'T12:00:00'); d.se
 export function crewIndex(email) { const i = CREW.findIndex((c) => c.email.toLowerCase() === (email || '').toLowerCase()); return i }
 const hash = (str = '') => { let h = 0; for (const ch of str) h = (h * 31 + ch.charCodeAt(0)) | 0; return Math.abs(h) }
 export function colorOf(u) { if (u?.color) return u.color; const i = crewIndex(u?.email); return COLORS[(i < 0 ? hash(u?.id || u?.email) : i) % COLORS.length] }
-export const CHAR_DEFAULT = ['polo', 'specs', 'waves']
+export const CHAR_DEFAULT = ['specs', 'polo', 'waves'] // Pank, Ravi, Merel
 export function charOf(u) { if (u?.char !== undefined) return u.char; const i = crewIndex(u?.email); return i >= 0 ? CHAR_DEFAULT[i] : null }
 export function nickOf(u) { const i = crewIndex(u?.email); return u?.nick || (i >= 0 ? CREW[i].nick : null) || (u?.name || 'Someone').split(' ')[0] }
 export const initial = (u) => nickOf(u).slice(0, 1).toUpperCase()
@@ -27,6 +27,10 @@ export function bestStreak(activity = {}) {
   return best
 }
 
+export const DEFAULT_TRACKS = ['fe', 'be', 'db', 'de', 'ai', 'dsa']
+export function myTracksOf(u) { if (u?.myTracks?.length) return u.myTracks; const i = crewIndex(u?.email); return CREW[i]?.tracks || u?.focus || DEFAULT_TRACKS }
+export function pathProgress(u, rm = BASE) { let d = 0, t = 0; for (const id of myTracksOf(u)) { const tr = rm.TRACK[id]; if (!tr) continue; const p = trackProgress(tr, u?.progress); d += p.done; t += p.total } return { done: d, total: t, pct: t ? d / t : 0 } }
+
 export function stats(u, posts = [], rm = BASE) {
   const p = u?.progress || {}
   const ticks = rm.ALL.reduce((a, nd) => a + nodeProgress(nd, p).done, 0)
@@ -35,7 +39,7 @@ export function stats(u, posts = [], rm = BASE) {
   const dsaDays = Object.keys(u?.dsa || {}).length
   const myPosts = posts.filter((x) => x.uid === u?.id).length
   const xp = ticks * 10 + nodesDone * 50 + tracksDone * 300 + dsaDays * 20 + myPosts * 15
-  return { ticks, nodesDone, tracksDone, dsaDays, posts: myPosts, xp, pct: rm.total ? ticks / rm.total : 0, streak: streak(u?.activity), best: bestStreak(u?.activity), todayCount: u?.activity?.[today()] || 0 }
+  return { ticks, nodesDone, tracksDone, dsaDays, posts: myPosts, xp, pct: rm.total ? ticks / rm.total : 0, path: pathProgress(u, rm), streak: streak(u?.activity), best: bestStreak(u?.activity), todayCount: u?.activity?.[today()] || 0 }
 }
 
 export const RANKS = [

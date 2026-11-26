@@ -40,6 +40,10 @@ export default function Chat() {
   let prev = null
   return (
     <div className="page chat">
+      <header className="chat-head">
+        <div><h1>Crew chat</h1><p>{users.length} members · messages are visible to everyone in the crew</p></div>
+        <div className="chat-members">{users.map((u) => <span key={u.id} title={nickOf(u)}><Avatar u={u} size={30} /></span>)}</div>
+      </header>
       <div className="chat-list" ref={list}>
         {msgs.map((m) => {
           const u = byId[m.uid], mine = m.uid === me.id
@@ -75,14 +79,13 @@ export default function Chat() {
       <div className="chat-input">
         {reply && <div className="replying"><span>↩ replying to <b>{nickOf(byId[reply.uid])}</b>: {(reply.text || 'media').slice(0, 60)}</span><button className="icon-btn" onClick={() => setReply(null)}>✕</button></div>}
         {img && <div className="preview small"><img src={img} alt="" /><button className="icon-btn" onClick={() => setImg(null)}>✕</button></div>}
-        <div className="quick">{QUICK.map((e) => <button key={e} onClick={() => setText((t) => t + e)}>{e}</button>)}</div>
         <div className="row">
-          <button className="icon-btn" onClick={() => file.current.click()} title="Photo">📷</button>
+          <button className="chat-tool" onClick={() => file.current.click()} title="Attach a photo" aria-label="Attach a photo">＋</button>
           <input ref={file} type="file" accept="image/*" hidden onChange={(e) => pick(e.target.files[0])} />
           {GIPHY_KEY && <button className="icon-btn gif-btn" onClick={() => setGifOpen(!gifOpen)} title="GIF">GIF</button>}
-          <textarea ref={input} rows={1} value={text} placeholder="Message the crew…" onChange={(e) => setText(e.target.value)}
+          <textarea ref={input} rows={1} value={text} placeholder="Write a message" onChange={(e) => setText(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }} />
-          <button className="btn solid send" disabled={busy} onClick={() => send()}>➤</button>
+          <button className="chat-send" disabled={busy || (!text.trim() && !img)} onClick={() => send()}>Send</button>
         </div>
       </div>
     </div>

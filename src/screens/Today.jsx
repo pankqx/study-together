@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useStore } from '../store.jsx'
 import { nodeProgress, conceptId, trackProgress, cText } from '../data/roadmap.js'
 import { PRONTOPY_URL } from '../config.js'
-import { stats, rank, nextUp, colorOf, nickOf, today } from '../lib/logic.js'
+import { stats, rank, nextUp, colorOf, nickOf, today, myTracksOf } from '../lib/logic.js'
 import { Avatar, Bar, Check } from '../ui.jsx'
 import { Echo } from '../art.jsx'
 
@@ -12,9 +12,8 @@ export default function Today() {
   const { me, crew, posts, api, rm } = useStore()
   const s = stats(me, posts, rm)
   const r = rank(s.xp)
-  const focus = me?.focus?.length ? me.focus : ['de']
+  const focus = myTracksOf(me).filter((id) => id !== 'dsa')
   const dsaToday = !!me?.dsa?.[today()]
-  const toggleFocus = (id) => api.setFocus(focus.includes(id) ? focus.filter((x) => x !== id) : [...focus, id])
 
   return (
     <div className="page today">
@@ -53,8 +52,7 @@ export default function Today() {
       <StudyRoom />
 
       <section>
-        <div className="sec-head"><h2>Next up</h2><span className="mono dim">pick your focus tracks</span></div>
-        <div className="chips">{rm.tracks.map((t) => <button key={t.id} className={'chip' + (focus.includes(t.id) ? ' on' : '')} onClick={() => toggleFocus(t.id)}>{t.glyph} {t.title}</button>)}</div>
+        <div className="sec-head"><h2>Next up in your tracks</h2><a href="#roadmap" className="mono">open roadmap →</a></div>
         <div className="next-grid">
           {focus.map((tid) => <NextCard key={tid} tid={tid} />)}
         </div>

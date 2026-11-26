@@ -4,10 +4,13 @@ A private study platform for three friends learning their way from full stack to
 
 **Live:** https://pankqx.github.io/study-together/
 
+Navigation: Today · Roadmap · DSA · Chat in the main bar; Crew, Proof wall, Planner and Board under **More** (top bar on desktop).
+
 ## What's inside
 
 | Screen | What it does |
 |---|---|
+| **DSA log** | Paste a LeetCode / ProntoPy link to log a solved problem with difficulty, pattern and a short note. One row per problem shows who in the crew has solved it, plus everyone's notes. Also: pattern coverage table and a personal "revisit" list. |
 | **Today** | Your streak, rank and XP. The mandatory 2-hour DSA block (via ProntoPy). A shared study-room timer, the next unfinished topic in each track you've picked to focus on, and the crew's activity today. |
 | **Roadmap** | 10 standalone tracks, each going from basics to pro: DSA in Python, Front end, Back end, DBMS, System design, DevOps, Cloud, Data engineering, AI full stack, Crossover. There's also a Capstones track and a blended **Crossover journey** (12 stages that mix every track). Tap a topic to tick concepts, open free resources, and post proof. |
 | **Crew** | Head-to-head "gap" bars per track, plus rank, XP, streaks, heatmaps and badges for each person. |
