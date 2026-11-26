@@ -6,11 +6,12 @@ import { stats, rank, nextUp, colorOf, nickOf, today, myTracksOf } from '../lib/
 import { Avatar, Bar, Check } from '../ui.jsx'
 import { Echo } from '../art.jsx'
 import { useLogs, useTeam } from './Log.jsx'
+import { personalBoardId, useEnsurePersonalBoards } from '../lib/boards.js'
 
 const hello = () => { const h = new Date().getHours(); return h < 5 ? 'Still up' : h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening' }
 
 export default function Today() {
-  const { me, crew, posts, api, rm } = useStore()
+  const { me, crew, posts, api, rm, theme, setTheme } = useStore()
   const s = stats(me, posts, rm)
   const r = rank(s.xp)
   const dsaToday = !!me?.dsa?.[today()]
@@ -20,6 +21,7 @@ export default function Today() {
       <div className="today-bar">
         <span className="today-brand">study<em>/</em>together</span>
         <span className="flame" title="Your streak"><b>{s.streak}</b> day streak</span>
+        <button className={'theme-toggle' + (theme === 'ink' ? ' dark' : '')} onClick={() => setTheme(theme === 'ink' ? 'sky' : 'ink')} aria-label={theme === 'ink' ? 'Switch to light' : 'Switch to dark'} title={theme === 'ink' ? 'Light mode' : 'Dark mode'}><i>{theme === 'ink' ? '☾' : '☀'}</i></button>
         <button className="me-btn" onClick={() => window.dispatchEvent(new Event('st:profile'))} title="Your profile" aria-label="Your profile"><Avatar u={me} size={40} /></button>
       </div>
       <section className="hero">
@@ -96,15 +98,18 @@ function TodayPlan() {
 }
 
 function BoardsMini() {
-  const { be } = useStore()
-  const [boards, setBoards] = useState([])
-  useEffect(() => be.watchCol('boards', setBoards, { orderBy: 'updatedAt', desc: true, limit: 4 }), [be])
+  const { be, crew, users } = useStore()
+  const [boards, setBoards] = useState({})
+  useEnsurePersonalBoards()
+  useEffect(() => { const offs = crew.map((u) => be.watchDoc('boards/' + personalBoardId(u.id), (d) => setBoards((b) => ({ ...b, [u.id]: d })))); return () => offs.forEach((f) => f()) }, [be, crew.length])
+  const count = (s) => { try { return JSON.parse(s || '[]').filter((e) => !e.isDeleted).length } catch { return 0 } }
+  const byId = Object.fromEntries(users.map((u) => [u.id, u]))
   return (
     <div className="card mini-card">
-      <div className="row between"><h3>Boards</h3><span className="mono dim">{boards.length ? 'recent' : ''}</span></div>
-      {boards.length ? <ul className="mini-list">{boards.map((b) => <li key={b.id}><a href={'#board/' + b.id}><b>{b.name}</b></a></li>)}</ul>
-        : <p className="dim">A shared whiteboard for system designs, pipelines and mind maps.</p>}
-      <a className="btn solid" href="#board">Open boards</a>
+      <div className="row between"><h3>Our boards</h3><span className="mono dim">one each · all can write</span></div>
+      <ul className="mini-list boards-mini">{crew.map((u) => { const b = boards[u.id]; return (
+        <li key={u.id}><a href={'#board/' + personalBoardId(u.id)}><Avatar u={u} size={30} /><span className="bm-text"><b>{nickOf(u)}'s board</b><small className="mono dim">{b ? `${count(b.elements)} shape${count(b.elements) === 1 ? '' : 's'}${b.updatedAt ? ' · edited ' + new Date(b.updatedAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) : ''}${b.updatedBy && b.updatedBy !== u.id ? ' by ' + nickOf(byId[b.updatedBy]) : ''}` : 'new'}</small></span><em>open →</em></a></li>) })}</ul>
+      <a className="btn solid" href="#board">All boards</a>
     </div>
   )
 }

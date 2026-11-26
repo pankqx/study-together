@@ -36,6 +36,7 @@ export default function Planner() {
   const [peekPlans, setPeekPlans] = useState({})
   const [anchor, setAnchor] = useState(today())
   const [ndays, setNdays] = useState(() => (window.innerWidth < 640 ? 1 : window.innerWidth < 1000 ? 3 : 7))
+  const [view, setView] = useState('days') // days | month | year
   const [edit, setEdit] = useState(null)
   const [quick, setQuick] = useState(false)
   const [now, setNow] = useState(new Date())
@@ -108,7 +109,10 @@ export default function Planner() {
   }
 
   const totalToday = blocks.filter((b) => b.day === today() && b.kind !== 'break').reduce((a, b) => a + (b.end - b.start), 0)
-  const month = new Date(days[0] + 'T12:00').toLocaleDateString(undefined, { month: 'long', year: 'numeric' })
+  const month = view === 'year' ? anchor.slice(0, 4) : new Date((view === 'month' ? anchor : days[0]) + 'T12:00').toLocaleDateString(undefined, { month: 'long', year: 'numeric' })
+  const shift = (dir) => setAnchor(view === 'year' ? addMonths(anchor, 12 * dir) : view === 'month' ? addMonths(anchor, dir) : addDays(anchor, ndays * dir))
+  const hoursOn = (d) => blocks.filter((b) => b.day === d && b.kind !== 'break').reduce((a, b) => a + (b.end - b.start), 0) / 60
+  const openDay = (d) => { setAnchor(d); setNdays(1); setView('days') }
   const colorFor = (b) => KINDS.find((k) => k[0] === b.kind)?.[2] || colorOf(me)
 
   return (
@@ -116,10 +120,14 @@ export default function Planner() {
       <div className="p-bar">
         <h1>{month}</h1>
         <div className="row wrap">
-          <button className="btn ghost" onClick={() => setAnchor(addDays(anchor, -ndays))}>‹</button>
+          <button className="btn ghost" onClick={() => shift(-1)} aria-label="Previous">‹</button>
           <button className="btn ghost" onClick={() => setAnchor(today())}>Today</button>
-          <button className="btn ghost" onClick={() => setAnchor(addDays(anchor, ndays))}>›</button>
-          <div className="seg">{[1, 3, 7].map((n) => <button key={n} className={ndays === n ? 'on' : ''} onClick={() => setNdays(n)}>{n}d</button>)}</div>
+          <button className="btn ghost" onClick={() => shift(1)} aria-label="Next">›</button>
+          <div className="seg">
+            {[1, 3, 7].map((n) => <button key={n} className={view === 'days' && ndays === n ? 'on' : ''} onClick={() => { setNdays(n); setView('days') }}>{n === 1 ? 'Day' : n === 3 ? '3 days' : 'Week'}</button>)}
+            <button className={view === 'month' ? 'on' : ''} onClick={() => setView('month')}>Month</button>
+            <button className={view === 'year' ? 'on' : ''} onClick={() => setView('year')}>Year</button>
+          </div>
           <button className="btn solid" onClick={() => setQuick(true)}>＋ Plan <kbd>E</kbd></button>
         </div>
       </div>
@@ -130,7 +138,9 @@ export default function Planner() {
       </div>
 
       <div className="p-layout">
-        <div className="p-cal">
+        {view === 'month' && <MonthView anchor={anchor} hoursOn={hoursOn} blocks={blocks} onDay={openDay} />}
+        {view === 'year' && <YearView anchor={anchor} hoursOn={hoursOn} onMonth={(m) => { setAnchor(m); setView('month') }} />}
+        <div className="p-cal" style={view === 'days' ? undefined : { display: 'none' }}>
           <div className="p-head" style={{ gridTemplateColumns: `44px repeat(${ndays}, 1fr)` }}>
             <span />{days.map((d) => <span key={d} className={d === today() ? 'is-today' : ''}><small>{dayName(d)}</small><b>{dayNum(d)}</b></span>)}
           </div>
@@ -221,5 +231,47 @@ function BlockEditor({ b, onClose, onSave, onDelete, onDone }) {
         </div>
       </form>
     </Sheet>
+  )
+}
+
+const addMonths = (iso, n) => { const d = new Date(iso.slice(0, 7) + '-01T12:00'); d.setMonth(d.getMonth() + n); return today(d) }
+const WEEK = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+function monthCells(first) {
+  const start = addDays(first, -((new Date(first + 'T12:00').getDay() + 6) % 7))
+  return Array.from({ length: 42 }, (_, i) => addDays(start, i))
+}
+function MonthView({ anchor, hoursOn, blocks, onDay }) {
+  const first = anchor.slice(0, 7) + '-01'
+  const ym = anchor.slice(0, 7)
+  return (
+    <div className="cal-month">
+      <div className="cal-week">{WEEK.map((w) => <span key={w}>{w}</span>)}</div>
+      <div className="cal-grid">
+        {monthCells(first).map((d) => { const h = hoursOn(d); const n = blocks.filter((b) => b.day === d).length; return (
+          <button key={d} className={'cal-day' + (d.slice(0, 7) !== ym ? ' out' : '') + (d === today() ? ' today' : '')} onClick={() => onDay(d)}>
+            <b>{Number(d.slice(8))}</b>
+            {h > 0 && <span className="cal-h"><i style={{ width: Math.min(100, (h / 7) * 100) + '%' }} /></span>}
+            {h > 0 && <small>{Math.round(h * 10) / 10}h{n > 1 ? ` · ${n}` : ''}</small>}
+          </button>) })}
+      </div>
+    </div>
+  )
+}
+function YearView({ anchor, hoursOn, onMonth }) {
+  const y = anchor.slice(0, 4)
+  return (
+    <div className="cal-year">
+      {Array.from({ length: 12 }, (_, m) => {
+        const first = `${y}-${String(m + 1).padStart(2, '0')}-01`
+        const ym = first.slice(0, 7)
+        const total = monthCells(first).filter((d) => d.slice(0, 7) === ym).reduce((a, d) => a + hoursOn(d), 0)
+        return (
+          <button key={m} className={'cal-mini' + (today().slice(0, 7) === ym ? ' now' : '')} onClick={() => onMonth(first)}>
+            <div className="cal-mini-head"><b>{new Date(first + 'T12:00').toLocaleDateString(undefined, { month: 'short' })}</b>{total > 0 && <small>{Math.round(total)}h</small>}</div>
+            <div className="cal-mini-grid">{monthCells(first).slice(0, 42).map((d) => { const h = hoursOn(d); return (
+              <i key={d} className={(d.slice(0, 7) !== ym ? 'out' : '') + (d === today() ? ' today' : '')} style={h ? { opacity: 0.25 + Math.min(1, h / 7) * 0.75 } : undefined} data-h={h ? 1 : 0} />) })}</div>
+          </button>)
+      })}
+    </div>
   )
 }

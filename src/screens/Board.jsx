@@ -1,19 +1,34 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Excalidraw, MainMenu, WelcomeScreen } from '@excalidraw/excalidraw'
+import { Excalidraw, MainMenu, WelcomeScreen, exportToSvg } from '@excalidraw/excalidraw'
 import '@excalidraw/excalidraw/index.css'
 import { useStore } from '../store.jsx'
-import { nickOf, timeAgo } from '../lib/logic.js'
+import { nickOf, timeAgo, colorOf } from '../lib/logic.js'
 import { Avatar, Empty } from '../ui.jsx'
 import { go } from '../App.jsx'
+import { personalBoardId, useEnsurePersonalBoards } from '../lib/boards.js'
 
 
 export default function Board({ id }) {
-  return id ? <Canvas id={id} /> : <BoardList />
+  return id ? <Canvas key={id} id={id} /> : <BoardList />
+}
+
+function Preview({ elements, dark }) {
+  const ref = useRef()
+  useEffect(() => {
+    let alive = true
+    let els = []; try { els = JSON.parse(elements || '[]').filter((e) => !e.isDeleted) } catch {}
+    if (!els.length) { if (ref.current) ref.current.innerHTML = ''; return }
+    exportToSvg({ elements: els, appState: { exportBackground: false, viewBackgroundColor: 'transparent', exportWithDarkMode: dark }, files: null, exportPadding: 16 })
+      .then((svg) => { if (!alive || !ref.current) return; svg.removeAttribute('width'); svg.removeAttribute('height'); ref.current.replaceChildren(svg) }).catch(() => {})
+    return () => { alive = false }
+  }, [elements, dark])
+  return <div className="board-preview" ref={ref} />
 }
 
 function BoardList() {
-  const { be, me, users } = useStore()
+  const { be, me, users, crew, theme } = useStore()
   const [boards, setBoards] = useState([])
+  useEnsurePersonalBoards()
   useEffect(() => be.watchCol('boards', setBoards, { orderBy: 'updatedAt', desc: true, limit: 60 }), [be])
   const byId = Object.fromEntries(users.map((u) => [u.id, u]))
   const create = async () => {
@@ -21,19 +36,30 @@ function BoardList() {
     const nid = await be.addDoc('boards', { name, elements: '[]', updatedAt: Date.now(), updatedBy: me.id, createdBy: me.id })
     go('board', nid)
   }
+  const personal = crew.map((u) => ({ u, b: boards.find((x) => x.id === personalBoardId(u.id)) }))
+  const shared = boards.filter((b) => !b.personal)
   return (
     <div className="page boards">
-      <div className="sec-head"><h1>Boards</h1><button className="btn solid" onClick={create}>＋ New board</button></div>
-      <p className="sub">Infinite black & white canvas. Sketch system designs, data pipelines, mind maps — all three of you, live.</p>
-      {!boards.length && <Empty glyph="✎">No boards yet. Make the first one — try drawing your data platform.</Empty>}
-      <div className="board-grid">
-        {boards.map((b) => { const n = safeCount(b.elements); return (
-          <a key={b.id} className="board-card" href={'#board/' + b.id}>
-            <div className="board-thumb"><span>{n}</span><small>shapes</small></div>
-            <b>{b.name}</b>
-            <small className="mono dim">edited {timeAgo(b.updatedAt)} ago by {nickOf(byId[b.updatedBy])}</small>
-          </a>) })}
+      <div className="sec-head"><h1>Boards</h1><button className="btn solid" onClick={create}>＋ New shared board</button></div>
+      <p className="sub">One board each, open to all three of you — write, draw and leave notes on each other's boards. Changes show up live.</p>
+      <div className="our-boards">
+        {personal.map(({ u, b }) => (
+          <a key={u.id} className="our-board" href={'#board/' + personalBoardId(u.id)} style={{ '--c': colorOf(u) }}>
+            <div className="our-board-canvas">{b && <Preview elements={b.elements} dark={theme === 'ink'} />}{(!b || !safeCount(b.elements)) && <span className="our-empty">Empty — tap to start writing</span>}</div>
+            <div className="our-board-meta"><Avatar u={u} size={30} /><div><b>{nickOf(u)}'s board</b><small>{b?.updatedAt ? `${safeCount(b.elements)} shape${safeCount(b.elements) === 1 ? '' : 's'} · edited ${timeAgo(b.updatedAt)} ago${b.updatedBy && b.updatedBy !== u.id ? ' by ' + nickOf(byId[b.updatedBy]) : ''}` : 'new'}</small></div></div>
+          </a>))}
       </div>
+      {!!shared.length && <>
+        <div className="sec-head" style={{ marginTop: 36 }}><h2>Shared boards</h2></div>
+        <div className="board-grid">
+          {shared.map((b) => (
+            <a key={b.id} className="board-card" href={'#board/' + b.id}>
+              <div className="board-thumb"><Preview elements={b.elements} dark={theme === 'ink'} />{!safeCount(b.elements) && <small>empty</small>}</div>
+              <b>{b.name}</b>
+              <small className="mono dim">edited {timeAgo(b.updatedAt)} ago by {nickOf(byId[b.updatedBy])}</small>
+            </a>))}
+        </div>
+      </>}
     </div>
   )
 }
@@ -61,9 +87,10 @@ function Canvas({ id }) {
       if (!d) return
       setMeta(d)
       let remote = []; try { remote = JSON.parse(d.elements || '[]') } catch {}
-      if (sig(remote) === lastSent.current) return
-      const merged = loaded.current ? merge(api.getSceneElementsIncludingDeleted(), remote) : remote
-      loaded.current = true
+      const first = !loaded.current
+      loaded.current = true // from here on, local edits are saved — even on an empty board
+      if (!first && sig(remote) === lastSent.current) return
+      const merged = first ? remote : merge(api.getSceneElementsIncludingDeleted(), remote)
       api.updateScene({ elements: merged })
     })
     const offFiles = be.watchCol('boards/' + id + '/files', (rows) => {
