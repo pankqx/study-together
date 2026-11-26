@@ -21,6 +21,7 @@ service cloud.firestore {
       allow delete: if signedIn() && resource.data.uid == request.auth.uid;
     }
     match /meta/{id}          { allow read, write: if signedIn(); }     // next call time
+    match /calls/{id}         { allow read, create: if signedIn(); allow delete: if signedIn() && resource.data.by == request.auth.uid; }
     match /posts/{id} {
       allow read, create, update: if signedIn();
       allow delete: if signedIn() && resource.data.uid == request.auth.uid;

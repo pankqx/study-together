@@ -151,6 +151,7 @@ function seedDemo(be) {
       studied: [{ key: 'cld-iam', nodeId: 'cld-iam', title: 'Identity & security' }, { key: 'dm-seo', nodeId: 'dm-seo', title: 'SEO' }],
       summary: 'IAM roles are like temporary badges — nobody should carry the master key. Also learnt that search intent matters more than the keyword itself.',
       confused: '', teach: { t1: { key: 'cld-iam', title: 'Identity & security', nodeId: 'cld-iam', done: true, doneAt: t - 20 * 36e5, doneBy: 'demo-0' } }, comments: {} }
+    store['calls/k1'] = { at: t - 4 * 864e5, by: 'demo-1', mode: 'call', present: ['demo-0', 'demo-1', 'demo-2'], notes: 'Ravi walked us through SQL window functions. Pank to revise CTEs. Merel explains IAM next time.' }
     store['meta/team'] = { nextCall: { at: day(-2) + 'T20:00', mode: 'call' } }
     store['roadmapLog/l1'] = { uid: 'demo-1', scope: 'team', action: 'added', title: 'Data engineering interview prep', track: 'de', at: t - 5 * 36e5 }
   })

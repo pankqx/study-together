@@ -42,12 +42,13 @@ export default function Log() {
       </header>
       <div className="lg-wrap">
         <div className="ds-tabs">
-          {[['write', "Today's entry"], ['feed', 'Crew log'], ['agenda', `Call agenda${pending ? ` (${pending})` : ''}`]].map(([k, l]) => (
+          {[['write', "Today's entry"], ['feed', 'Crew log'], ['agenda', `Call agenda${pending ? ` (${pending})` : ''}`], ['recap', 'Recap & calls']].map(([k, l]) => (
             <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l}</button>))}
         </div>
         {tab === 'write' && <Editor logs={logs} onDone={() => setTab('feed')} />}
         {tab === 'feed' && <Feed logs={logs} />}
         {tab === 'agenda' && <Agenda logs={logs} team={team} />}
+        {tab === 'recap' && <Recap logs={logs} />}
       </div>
     </div>
   )
@@ -275,5 +276,150 @@ function Agenda({ logs, team }) {
             </div>))}
         </section>)}
     </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────
+//  Recap — everything each of us learnt in a period, pulled from
+//  the roadmap ticks, the daily log and the DSA log. Built for calls.
+// ─────────────────────────────────────────────────────────────
+const DIFF = { easy: 'E', medium: 'M', hard: 'H' }
+
+function Recap({ logs }) {
+  const { be, me, crew, rm, users } = useStore()
+  const [calls, setCalls] = useState([])
+  const [problems, setProblems] = useState([])
+  useEffect(() => be.watchCol('calls', setCalls, { orderBy: 'at', desc: true, limit: 60 }), [be])
+  useEffect(() => be.watchCol('problems', setProblems, { orderBy: 'at', desc: true, limit: 2000 }), [be])
+  const lastCall = calls[0]
+  const [period, setPeriod] = useState(null)
+  const p = period || (lastCall ? 'call' : 'week')
+  const from = p === 'call' && lastCall ? lastCall.at : p === 'week' ? Date.now() - 7 * 864e5 : p === 'month' ? Date.now() - 30 * 864e5 : 0
+  const fromDay = from ? today(new Date(from)) : '0000-00-00'
+  const byId = Object.fromEntries(users.map((u) => [u.id, u]))
+
+  const data = crew.map((u) => {
+    // concepts ticked in the period, grouped by topic
+    const topics = {}
+    let concepts = 0
+    for (const [k, ts] of Object.entries(u.progress || {})) {
+      if (ts < from) continue
+      const nodeId = k.split('__')[0]; const nd = rm.NODE[nodeId]; if (!nd) continue
+      concepts++; topics[nodeId] = topics[nodeId] || { nd, n: 0 }; topics[nodeId].n++
+    }
+    const entries = logs.filter((l) => l.uid === u.id && l.day >= fromDay).sort((a, b) => a.day.localeCompare(b.day))
+    for (const l of entries) for (const st of l.studied || []) if (!st.nodeId && !topics['x' + st.key]) topics['x' + st.key] = { nd: { id: st.key, title: st.title, track: '' }, n: 0 }
+    const probs = [...new Map(problems.filter((r) => r.uid === u.id && r.at >= from).map((r) => [r.slug, r])).values()]
+    const questions = entries.filter((l) => l.confused).map((l) => ({ day: l.day, text: l.confused }))
+    const byTrack = {}
+    Object.values(topics).forEach((t) => { const tr = t.nd.track || 'other'; (byTrack[tr] = byTrack[tr] || []).push(t) })
+    return { u, concepts, topics: Object.values(topics), byTrack, entries, probs, questions }
+  })
+
+  const label = p === 'call' ? `since the last call (${new Date(lastCall.at).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })})` : p === 'week' ? 'in the past 7 days' : p === 'month' ? 'in the past 30 days' : 'since the beginning'
+  const asText = () => [
+    `STUDY TOGETHER — recap ${label}`, '',
+    ...data.flatMap(({ u, concepts, byTrack, probs, entries, questions }) => [
+      `▌${nickOf(u).toUpperCase()} — ${concepts} concepts · ${Object.values(byTrack).flat().length} topics · ${probs.length} DSA problems · ${entries.length} log entries`,
+      ...Object.entries(byTrack).map(([tr, ts]) => `  ${rm.TRACK[tr]?.title || 'Other'}: ${ts.map((t) => t.nd.title + (t.n ? ` (${t.n})` : '')).join(', ')}`),
+      probs.length ? `  DSA: ${probs.map((r) => `${r.title}${r.difficulty ? ` [${DIFF[r.difficulty]}]` : ''}`).join(', ')}` : '',
+      ...entries.filter((l) => l.summary).map((l) => `  • ${l.day}: ${l.summary}`),
+      ...questions.map((q) => `  ? ${q.text}`), '',
+    ]).filter((x) => x !== ''),
+  ].join('\n')
+  const [copied, setCopied] = useState(false)
+  const copy = async () => { try { await navigator.clipboard.writeText(asText()); setCopied(true); setTimeout(() => setCopied(false), 1800) } catch { prompt('Copy the recap', asText()) } }
+
+  return (
+    <div className="rc">
+      <div className="rc-top">
+        <div className="rm-filters">
+          {lastCall && <button className={p === 'call' ? 'on' : ''} onClick={() => setPeriod('call')}>Since last call</button>}
+          <button className={p === 'week' ? 'on' : ''} onClick={() => setPeriod('week')}>Past 7 days</button>
+          <button className={p === 'month' ? 'on' : ''} onClick={() => setPeriod('month')}>Past 30 days</button>
+          <button className={p === 'all' ? 'on' : ''} onClick={() => setPeriod('all')}>Since the beginning</button>
+        </div>
+        <div className="rc-actions">
+          <button className="rm-btn" onClick={copy}>{copied ? 'Copied ✓' : 'Copy recap'}</button>
+          <a className="rm-btn" href={'https://wa.me/?text=' + encodeURIComponent(asText())} target="_blank" rel="noreferrer">Share on WhatsApp</a>
+          <button className="rm-btn" onClick={() => window.print()}>Print</button>
+        </div>
+      </div>
+      <p className="rm-meta">What each of us learnt {label}. Go person by person on the call: they explain, the others ask.</p>
+
+      <div className="rc-people">
+        {data.map(({ u, concepts, byTrack, entries, probs, questions, topics }) => (
+          <section key={u.id} className="rc-person" style={{ '--c': colorOf(u) }}>
+            <header>
+              <Avatar u={u} size={44} />
+              <div><h3>{nickOf(u)}</h3>
+                <p className="rm-meta">{concepts} concepts · {topics.length} topics · {probs.length} DSA · {entries.length} log entr{entries.length === 1 ? 'y' : 'ies'}</p></div>
+            </header>
+            {!topics.length && !probs.length && !entries.length ? <p className="rm-empty">Nothing logged in this period.</p> : null}
+            {Object.entries(byTrack).map(([tr, ts]) => (
+              <div key={tr} className="rc-track">
+                <span className="rm-sub">{rm.TRACK[tr]?.title || 'Other'}</span>
+                <div className="lg-chips static">{ts.sort((a, b) => b.n - a.n).map((t) => t.nd.track
+                  ? <a key={t.nd.id} className="lg-chip on" href={`#roadmap/${t.nd.track}/${t.nd.id}`}>{t.nd.title}{t.n ? <em>{t.n}</em> : null}</a>
+                  : <span key={t.nd.id} className="lg-chip on">{t.nd.title}</span>)}</div>
+              </div>))}
+            {!!probs.length && (
+              <div className="rc-track">
+                <span className="rm-sub">DSA solved</span>
+                <div className="lg-chips static">{probs.map((r) => <span key={r.slug} className={'lg-chip on dsa ' + (r.difficulty || '')}>{r.title}</span>)}</div>
+              </div>)}
+            {entries.some((l) => l.summary) && (
+              <div className="rc-track">
+                <span className="rm-sub">In their own words</span>
+                {entries.filter((l) => l.summary).map((l) => <div key={l.id} className="rc-say"><small>{dayLabel(l.day)}</small><p>{l.summary}</p></div>)}
+              </div>)}
+            {!!questions.length && (
+              <div className="rc-track">
+                <span className="rm-sub">Questions</span>
+                {questions.map((q, i) => <div key={i} className="lg-q"><p>{q.text}</p></div>)}
+              </div>)}
+          </section>))}
+      </div>
+
+      <CallNotes calls={calls} byId={byId} />
+    </div>
+  )
+}
+
+function CallNotes({ calls, byId }) {
+  const { be, me, crew } = useStore()
+  const [notes, setNotes] = useState('')
+  const [present, setPresent] = useState({}) // everyone counts as present unless switched off
+  const [mode, setMode] = useState('call')
+  const save = async () => {
+    await be.addDoc('calls', { at: Date.now(), by: me.id, mode, notes: notes.trim(), present: crew.map((u) => u.id).filter((k) => present[k] !== false) })
+    setNotes('')
+  }
+  return (
+    <section className="rc-calls">
+      <div className="rm-level-label"><span>Finish a call</span></div>
+      <div className="lg-block single">
+        <div>
+          <h3>Save this call</h3>
+          <p className="rm-meta">Write what you agreed, what to revise, and what's next. “Since last call” recaps start from here.</p>
+          <div className="rc-row">
+            <div className="rm-seg"><button className={mode === 'call' ? 'on' : ''} onClick={() => setMode('call')}>Call</button><button className={mode === 'meet' ? 'on' : ''} onClick={() => setMode('meet')}>Meet-up</button></div>
+            <div className="rm-filters">{crew.map((u) => <button key={u.id} className={present[u.id] !== false ? 'on' : ''} onClick={() => setPresent({ ...present, [u.id]: present[u.id] === false })}>{nickOf(u)}</button>)}</div>
+          </div>
+          <textarea rows={4} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Decisions, things to revise, who explains what next time…" />
+          <div className="lg-save" style={{ paddingLeft: 0 }}><button className="rm-btn solid" onClick={save}>Save call</button></div>
+        </div>
+      </div>
+      {!!calls.length && <>
+        <div className="rm-level-label"><span>Past calls</span><em>{calls.length}</em></div>
+        {calls.map((c) => (
+          <div key={c.id} className="lg-item q">
+            <span className="rm-dot" style={{ background: colorOf(byId[c.by]) }} />
+            <div><b>{new Date(c.at).toLocaleString(undefined, { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })} · {c.mode === 'meet' ? 'meet-up' : 'call'}</b>
+              <small>{(c.present || []).map((id) => nickOf(byId[id])).join(', ')}</small>
+              {c.notes && <p className="rc-notes">{c.notes}</p>}</div>
+          </div>))}
+      </>}
+    </section>
   )
 }

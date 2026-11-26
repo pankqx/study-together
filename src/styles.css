@@ -877,3 +877,26 @@ input, textarea, select { border: 2px solid transparent; background: var(--card)
 .log-who { display: flex; gap: 18px; margin-bottom: 10px; }
 .log-person { display: grid; justify-items: center; gap: 4px; opacity: .5; } .log-person.did { opacity: 1; }
 .log-person small { font: 11px 'IBM Plex Mono', monospace; }
+
+/* ═════════ RECAP & CALLS ═════════ */
+.rc { display: grid; gap: 18px; }
+.rc-top { display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; align-items: center; }
+.rc-top .rm-filters { margin: 0; }
+.rc-actions { display: flex; gap: 8px; flex-wrap: wrap; } .rc-actions a { text-decoration: none; }
+.rc-people { display: grid; gap: 16px; }
+.rc-person { background: var(--r-card); border: 1px solid var(--r-line); border-radius: 14px; padding: 20px; display: grid; gap: 16px; box-shadow: inset 4px 0 0 var(--c); }
+.rc-person header { display: flex; gap: 14px; align-items: center; }
+.rc-person h3 { font-stretch: 100%; font-size: 20px; letter-spacing: -0.01em; font-weight: 700; } .rc-person header .rm-meta { margin: 2px 0 0; }
+.rc-track { display: grid; gap: 8px; } .rc-track .rm-sub { margin: 0; }
+.rc-track .lg-chips { margin: 0; }
+.lg-chip.dsa.easy { box-shadow: inset 3px 0 0 #2f9e6e; } .lg-chip.dsa.medium { box-shadow: inset 3px 0 0 #d39b1f; } .lg-chip.dsa.hard { box-shadow: inset 3px 0 0 #c8443a; }
+.rc-say { border-left: 2px solid var(--r-line); padding: 2px 0 2px 12px; } .rc-say small { font: 11px 'IBM Plex Mono', monospace; color: var(--r-mute); }
+.rc-say p { margin: 2px 0 0; line-height: 1.6; font-size: 15px; white-space: pre-wrap; }
+.rc-calls { display: grid; gap: 12px; margin-top: 12px; }
+.lg-block.single { grid-template-columns: 1fr; }
+.rc-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 12px; } .rc-row .rm-filters { margin: 0; }
+.rc-notes { margin: 8px 0 0; line-height: 1.55; white-space: pre-wrap; }
+@media print {
+  .bottom-nav, .rm-top .lg-call, .ds-tabs, .rc-top, .rc-calls, .today-bar { display: none !important; }
+  .shell, .rm, body { background: #fff !important; } .rc-person { break-inside: avoid; }
+}
