@@ -969,3 +969,54 @@ input, textarea, select { border: 2px solid transparent; background: var(--card)
 .theme-toggle { width: 52px; height: 30px; border-radius: 999px; border: 0; background: rgba(255,255,255,.55); position: relative; padding: 0; flex: none; }
 .theme-toggle i { position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%; background: #fff; color: #202227; display: grid; place-items: center; font-style: normal; font-size: 13px; transition: transform .2s; box-shadow: 0 1px 3px rgba(0,0,0,.15); }
 .theme-toggle.dark { background: #33373f; } .theme-toggle.dark i { transform: translateX(22px); background: #202227; color: var(--sky); }
+
+/* ═════════ SPLASH ═════════ */
+.splash { position: fixed; inset: 0; z-index: 100; background: #29c8ff; display: grid; place-items: center; overflow: hidden; cursor: pointer; animation: splashOut .35s ease-in 2.6s forwards; }
+[data-theme='ink'] .splash { background: #202227; }
+.splash-echo { position: absolute; inset: -4vh -10vw; display: grid; align-content: center; gap: 0; transform: rotate(-8deg); }
+.splash-echo span { font: 900 clamp(48px, 12vw, 140px)/.9 'Archivo', sans-serif; font-stretch: 125%; color: #a9ecff; white-space: nowrap; opacity: calc(.55 - var(--i) * .07);
+  animation: slide 3s linear infinite; animation-delay: calc(var(--i) * -.4s); }
+[data-theme='ink'] .splash-echo span { color: #2f333b; }
+.splash-echo span:nth-child(even) { animation-direction: reverse; }
+@keyframes slide { from { transform: translateX(-6%); } to { transform: translateX(6%); } }
+.splash-center { position: relative; display: grid; justify-items: center; gap: 22px; text-align: center; }
+.splash-crew { display: flex; gap: 18px; }
+.splash-face { display: grid; justify-items: center; gap: 8px; opacity: 0; transform: translateY(24px) scale(.6); animation: pop .6s cubic-bezier(.2,1.4,.4,1) var(--d) forwards; }
+.splash-face small { font: 700 12px 'IBM Plex Mono', monospace; color: #202227; } [data-theme='ink'] .splash-face small { color: #eef9ff; }
+.splash-ring { width: 84px; height: 84px; border-radius: 50%; overflow: hidden; background: var(--c); box-shadow: 0 0 0 4px #fff, 0 12px 30px rgba(0,0,0,.18); }
+@keyframes pop { to { opacity: 1; transform: none; } }
+.splash-word { font: 900 clamp(34px, 9vw, 56px)/1 'Archivo', sans-serif; font-stretch: 115%; letter-spacing: -0.04em; color: #202227; opacity: 0; animation: rise .5s ease-out .95s forwards; }
+.splash-word em { font-style: normal; color: #fff; } [data-theme='ink'] .splash-word { color: #eef9ff; } [data-theme='ink'] .splash-word em { color: #29c8ff; }
+@keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+.splash-line { width: min(240px, 60vw); height: 4px; border-radius: 4px; background: rgba(32,34,39,.15); overflow: hidden; }
+.splash-line i { display: block; height: 100%; width: 0; background: #202227; border-radius: 4px; animation: fill 2.4s cubic-bezier(.6,.1,.3,1) .3s forwards; }
+[data-theme='ink'] .splash-line { background: rgba(255,255,255,.12); } [data-theme='ink'] .splash-line i { background: #29c8ff; }
+@keyframes fill { to { width: 100%; } }
+.splash-tag { margin: 0; font: 12px 'IBM Plex Mono', monospace; color: #1d5f7a; opacity: 0; animation: rise .5s ease-out 1.4s forwards; letter-spacing: .06em; }
+[data-theme='ink'] .splash-tag { color: #93a3ad; }
+@keyframes splashOut { to { opacity: 0; transform: scale(1.04); } }
+@media (prefers-reduced-motion: reduce) { .splash *, .splash { animation-duration: .01s !important; animation-delay: 0s !important; } }
+
+/* ═════════ CLOSE BUTTONS ═════════ */
+.screen-close { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(92px + env(safe-area-inset-bottom)); z-index: 29;
+  border: 0; background: rgba(32,34,39,.88); color: #eef9ff; border-radius: 999px; padding: 9px 18px; font-weight: 700; font-size: 13px; box-shadow: 0 6px 18px rgba(0,0,0,.18); backdrop-filter: blur(6px); }
+.screen-close:hover { background: #202227; }
+.sheet-close { display: block; width: 100%; margin: 22px 0 4px; border: 0; background: var(--chip); color: var(--ink); border-radius: 14px; padding: 13px; font-weight: 700; }
+.shell { padding-bottom: 150px; }
+
+/* ═════════ LOG: teach text + proof wall ═════════ */
+.lg-suggest { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 10px; }
+.lg-suggest .rm-meta { margin: 0 4px 0 0; } .lg-suggest .lg-chip { padding: 5px 11px; font-size: 13px; }
+.lg-proof { margin-top: 30px; border-top: 1px solid var(--r-line); padding-top: 26px; }
+.lg-proof .page { padding: 0; } .lg-proof h2 { font-stretch: 100%; font-size: 22px; letter-spacing: -0.01em; font-weight: 700; color: var(--r-ink); }
+.lg-proof .composer { background: var(--r-card); border: 1px solid var(--r-line); box-shadow: none; color: var(--r-ink); border-radius: 14px; }
+.lg-proof .composer textarea { color: var(--r-ink); }
+.lg-proof .post { border: 1px solid var(--r-line); border-radius: 14px; background: var(--r-card); color: var(--r-ink); } .lg-proof .post::after { height: 3px; }
+.lg-proof .btn { box-shadow: none; } .lg-proof .btn.solid { background: var(--r-ink); color: var(--r-card); }
+
+/* ═════════ SPACED RECALL ═════════ */
+.recall-card h2 { margin: 12px 0 6px; } .recall-card > p { margin: 0 0 14px; }
+.recall-list { list-style: none; padding: 0; margin: 0; display: grid; }
+.recall-list li { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 0; border-top: 1px solid var(--line-soft); flex-wrap: wrap; }
+.recall-list b { display: block; font-weight: 600; } .recall-list small { font-size: 11px; }
+.recall-btns { display: flex; gap: 8px; } .recall-btns .btn { padding: 8px 14px; font-size: 14px; }

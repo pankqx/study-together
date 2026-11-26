@@ -3,6 +3,7 @@ import { useStore } from '../store.jsx'
 import { DEL, uid8 } from '../lib/backend.js'
 import { colorOf, nickOf, timeAgo, today, addDays } from '../lib/logic.js'
 import { Avatar } from '../ui.jsx'
+import ProofWall from './Feed.jsx'
 
 // ─────────────────────────────────────────────────────────────
 //  Learning log — what each of us learnt, in our own words,
@@ -49,6 +50,7 @@ export default function Log() {
         {tab === 'feed' && <Feed logs={logs} />}
         {tab === 'agenda' && <Agenda logs={logs} team={team} />}
         {tab === 'recap' && <Recap logs={logs} />}
+        <section className="lg-proof"><ProofWall /></section>
       </div>
     </div>
   )
@@ -98,7 +100,7 @@ function Editor({ logs, onDone }) {
   const [studied, setStudied] = useState([])
   const [summary, setSummary] = useState('')
   const [confused, setConfused] = useState('')
-  const [teach, setTeach] = useState({})
+  const [teachText, setTeachText] = useState('')
   const [extra, setExtra] = useState('')
   const [saved, setSaved] = useState(null)
   const [loaded, setLoaded] = useState(false)
@@ -107,7 +109,7 @@ function Editor({ logs, onDone }) {
     if (loaded) return
     if (existing) {
       setStudied(existing.studied || []); setSummary(existing.summary || ''); setConfused(existing.confused || '')
-      setTeach(Object.fromEntries(Object.entries(existing.teach || {}).map(([k, t]) => [t.key || k, true])))
+      setTeachText(Object.values(existing.teach || {}).map((t) => t.title).join('\n'))
       setLoaded(true)
     } else if (logs.length || suggested.length) {
       setStudied(suggested.map((s) => ({ key: s.nodeId, nodeId: s.nodeId, title: s.title })))
@@ -119,10 +121,11 @@ function Editor({ logs, onDone }) {
   const addExtra = () => { const t = extra.trim(); if (!t) return; toggleStudied({ key: 'x-' + uid8(), title: t }); setExtra('') }
 
   const save = async () => {
+    // one agenda item per line; keep "explained" status for lines that didn't change
     const teachMap = {}
-    for (const st of studied) if (teach[st.key]) {
-      const prev = Object.entries(existing?.teach || {}).find(([, t]) => t.key === st.key)
-      teachMap[prev ? prev[0] : 't' + uid8()] = prev ? prev[1] : { key: st.key, title: st.title, nodeId: st.nodeId || null, done: false }
+    for (const line of teachText.split('\n').map((x) => x.replace(/^[-•*\s]+/, '').trim()).filter(Boolean)) {
+      const prev = Object.entries(existing?.teach || {}).find(([, t]) => t.title === line)
+      teachMap[prev ? prev[0] : 't' + uid8()] = prev ? prev[1] : { key: 't' + uid8(), title: line, done: false }
     }
     await be.setDoc('logs/' + id, { uid: me.id, day: today(), studied, summary: summary.trim(), confused: confused.trim(), updatedAt: Date.now(), createdAt: existing?.createdAt || Date.now() })
     await be.updateDoc('logs/' + id, { teach: teachMap })
@@ -169,10 +172,10 @@ function Editor({ logs, onDone }) {
         <div className="lg-step">4</div>
         <div>
           <h3>What will you teach on the next call?</h3>
-          <p className="rm-meta">Pick topics you'll explain to the others. They land on the shared agenda.</p>
-          {studied.length ? <div className="lg-chips">{studied.map((st) => (
-            <button key={st.key} className={'lg-chip teach' + (teach[st.key] ? ' on' : '')} onClick={() => setTeach({ ...teach, [st.key]: !teach[st.key] })}>{teach[st.key] ? '✓ ' : ''}I'll explain {st.title}</button>))}</div>
-            : <p className="rm-empty">Pick what you studied in step 1 first.</p>}
+          <p className="rm-meta">One topic per line. Each line becomes an item on the shared call agenda.</p>
+          <textarea rows={3} value={teachText} onChange={(e) => setTeachText(e.target.value)} placeholder={'How Spark broadcast joins avoid a shuffle\nWhy dbt incremental models need a unique key'} />
+          {!!studied.length && <div className="lg-suggest"><span className="rm-meta">Quick add:</span>{studied.map((st) => (
+            <button key={st.key} className="lg-chip" onClick={() => setTeachText((t) => (t.trim() ? t.trim() + '\n' : '') + st.title)}>＋ {st.title}</button>))}</div>}
         </div>
       </section>
 
@@ -254,7 +257,7 @@ function Agenda({ logs, team }) {
             <div><b>{t.title}</b><small>{nickOf(byId[t.log.uid])} explains · studied {dayLabel(t.log.day).toLowerCase()}</small></div>
             <button className="rm-btn" onClick={() => mark(t, true)}>Explained ✓</button>
           </div>))}
-        {!open.length && <p className="rm-empty">Nothing on the agenda yet. Pick topics to teach in your daily entry.</p>}
+        {!open.length && <p className="rm-empty">Nothing on the agenda yet. Add topics to teach in step 4 of your daily entry.</p>}
       </section>
       <section>
         <div className="rm-level-label"><span>Questions for the crew</span><em>{questions.length}</em></div>

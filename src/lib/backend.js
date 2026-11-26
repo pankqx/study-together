@@ -55,6 +55,7 @@ function demoEngine() {
   const deepMerge = (a, b) => { for (const [k, v] of Object.entries(b)) { if (v && typeof v === 'object' && !Array.isArray(v) && !v.__op) a[k] = deepMerge(a[k] && typeof a[k] === 'object' ? a[k] : {}, v); else setPath(a, k, v) } return a }
   const clone = (x) => JSON.parse(JSON.stringify(x))
   let me = null
+  try { me = JSON.parse(localStorage.getItem(KEY + '-auth') || 'null') } catch {}
   const authSubs = new Set()
   const seed = () => {
     if (store.__seeded) return
@@ -70,9 +71,9 @@ function demoEngine() {
   seed()
   return {
     demoSeed: (fn) => { if (!store.__seeded2) { fn(store); store.__seeded2 = true; save() } },
-    onAuth: (cb) => { authSubs.add(cb); cb(me); return () => authSubs.delete(cb) },
-    signIn: async () => { me = { uid: 'demo-0', email: CREW[0].email, name: CREW[0].nick, photo: '' }; authSubs.forEach((f) => f(me)) },
-    signOut: async () => { me = null; authSubs.forEach((f) => f(me)) },
+    onAuth: (cb) => { authSubs.add(cb); setTimeout(() => cb(me), 0); return () => authSubs.delete(cb) },
+    signIn: async () => { me = { uid: 'demo-0', email: CREW[0].email, name: CREW[0].nick, photo: '' }; localStorage.setItem(KEY + '-auth', JSON.stringify(me)); authSubs.forEach((f) => f(me)) },
+    signOut: async () => { me = null; localStorage.removeItem(KEY + '-auth'); authSubs.forEach((f) => f(me)) },
     watchDoc: (path, cb) => { const f = () => cb(store[path] ? clone({ id: path.split('/').pop(), ...store[path] }) : null); subs.add(f); f(); return () => subs.delete(f) },
     watchCol: (path, cb, o = {}) => {
       const f = () => {

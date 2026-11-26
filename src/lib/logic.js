@@ -14,12 +14,21 @@ export function charOf(u) { if (u?.char !== undefined) return u.char; const i = 
 export function nickOf(u) { const i = crewIndex(u?.email); return u?.nick || (i >= 0 ? CREW[i].nick : null) || (u?.name || 'Someone').split(' ')[0] }
 export const initial = (u) => nickOf(u).slice(0, 1).toUpperCase()
 
-export function streak(activity = {}) {
-  let d = today(), s = 0
-  if (!activity[d]) d = addDays(d, -1) // today not yet counted — streak still alive
-  while (activity[d]) { s++; d = addDays(d, -1) }
-  return s
+// A streak survives one missed day per week — a "rest day". Research on broken streaks
+// shows that a single miss makes people quit, and that being able to repair it softens that.
+export function streakInfo(activity = {}) {
+  let d = today(), s = 0, sinceRest = 99, rests = []
+  if (!activity[d]) d = addDays(d, -1)
+  for (;;) {
+    if (activity[d]) { s++; sinceRest++; d = addDays(d, -1); continue }
+    const prev = addDays(d, -1)
+    if (s > 0 && activity[prev] && sinceRest >= 6) { rests.push(d); sinceRest = 0; d = prev; continue }
+    break
+  }
+  const weekAgo = addDays(today(), -7)
+  return { streak: s, restUsed: rests.some((r) => r > weekAgo) }
 }
+export const streak = (activity = {}) => streakInfo(activity).streak
 export function bestStreak(activity = {}) {
   const days = Object.keys(activity).filter((k) => activity[k]).sort()
   let best = 0, run = 0, prev = null

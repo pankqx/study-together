@@ -70,6 +70,7 @@ export function StoreProvider({ children }) {
       updateProblem: (id, patch) => be.updateDoc('problems/' + id, patch),
       deleteProblem: (id) => be.delDoc('problems/' + id),
       setStudying: (until, label) => be.updateDoc(path, { studying: until ? { until, label: label || '' } : DEL }),
+      recall: (cid, ok) => be.updateDoc(path, { ['recall.' + cid]: { at: Date.now(), ok, again: ok ? null : today(new Date(Date.now() + 864e5)) }, ...bump() }),
       setCurrent: (nodeId) => be.updateDoc(path, { current: nodeId || DEL }),
       setMode: (m) => be.updateDoc(path, { rmMode: m }),
       updateProfile: (p) => be.updateDoc(path, p),

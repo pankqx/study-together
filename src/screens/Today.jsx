@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useStore } from '../store.jsx'
 import { nodeProgress, conceptId, trackProgress, cText } from '../data/roadmap.js'
 import { PRONTOPY_URL } from '../config.js'
-import { stats, rank, nextUp, colorOf, nickOf, today, myTracksOf } from '../lib/logic.js'
+import { stats, rank, nextUp, colorOf, nickOf, today, addDays, myTracksOf, streakInfo } from '../lib/logic.js'
 import { Avatar, Bar, Check } from '../ui.jsx'
 import { Echo } from '../art.jsx'
 import { useLogs, useTeam } from './Log.jsx'
@@ -33,7 +33,7 @@ export default function Today() {
             <p className="sub">{s.todayCount ? `${s.todayCount} thing${s.todayCount > 1 ? 's' : ''} done today. Keep the chain alive.` : 'Nothing ticked yet today. One checkbox keeps the streak.'}</p>
           </div>
           <div className="hero-stats">
-            <div className="big-stat"><b>{s.streak}</b><span>day streak 🔥</span></div>
+            <div className="big-stat"><b>{s.streak}</b><span>day streak 🔥{streakInfo(me?.activity).restUsed ? ' · rest day used' : ''}</span></div>
             <div className="big-stat"><b>{s.ticks}</b><span>concepts</span></div>
             <div className="big-stat rank"><b>{r.title}</b><span>{s.xp} xp{r.next ? ` · ${r.next[0] - s.xp} to ${r.next[1]}` : ''}</span>
               {r.next && <Bar pct={(s.xp - r.at) / (r.next[0] - r.at)} color={colorOf(me)} h={6} />}</div>
@@ -45,9 +45,10 @@ export default function Today() {
         <div className="dsa-l">
           <span className="tag ink">mandatory · 2 hrs</span>
           <h2>DSA in Python</h2>
-          <p>Practise on ProntoPy first. Then everything else.</p>
+          <p>Practise on ProntoPy or LeetCode first, then everything else. Log what you solve in the DSA tab.</p>
           <div className="row">
-            <a className="btn" href={PRONTOPY_URL} target="_blank" rel="noreferrer">Open ProntoPy ↗</a>
+            <a className="btn" href={PRONTOPY_URL} target="_blank" rel="noreferrer">ProntoPy ↗</a>
+            <a className="btn" href="https://leetcode.com/problemset/" target="_blank" rel="noreferrer">LeetCode ↗</a>
             <Check on={dsaToday} onChange={api.toggleDSA} color={colorOf(me)}>Done for today</Check>
           </div>
         </div>
@@ -55,6 +56,8 @@ export default function Today() {
           {crew.map((u) => <div key={u.id} className={'dsa-who' + (u.dsa?.[today()] ? ' done' : '')} style={{ '--c': colorOf(u) }}><Avatar u={u} size={36} /><small>{u.dsa?.[today()] ? 'done' : '…'}</small></div>)}
         </div>
       </section>
+
+      <RecallCard />
 
       <LogCard />
 
@@ -135,6 +138,47 @@ function LogCard() {
           <div key={u.id} className={'log-person' + (did ? ' did' : '')} style={{ '--c': colorOf(u) }}><Avatar u={u} size={40} ring={did} /><small>{did ? 'logged' : 'not yet'}</small></div>) })}</div>
         <p className="mono dim">{pending} topic{pending === 1 ? '' : 's'} to explain{nc ? ` · next call ${nc}` : ''}</p>
       </div>
+    </section>
+  )
+}
+
+// Spaced recall: concepts you ticked 1, 3, 7, 21 and 60 days ago come back as
+// "explain it again" prompts. Retrieval spaced over time is one of the best-supported
+// ways to make learning stick.
+const INTERVALS = [1, 3, 7, 21, 60]
+function RecallCard() {
+  const { me, rm, api } = useStore()
+  const [open, setOpen] = useState(null)
+  const todayISO = today()
+  const text = {}
+  for (const nd of rm.ALL) for (const c of nd.concepts) text[conceptId(nd.id, c)] = { c: cText(c), nd }
+  const due = []
+  for (const [cid, ts] of Object.entries(me?.progress || {})) {
+    if (!text[cid]) continue
+    const r = me?.recall?.[cid]
+    if (r && today(new Date(r.at)) === todayISO) continue // already answered today
+    const age = Math.round((new Date(todayISO + 'T12:00') - new Date(today(new Date(ts)) + 'T12:00')) / 864e5)
+    const again = r?.again && r.again <= todayISO
+    if (again || INTERVALS.includes(age)) due.push({ cid, age, again, ...text[cid] })
+  }
+  due.sort((a, b) => (b.again - a.again) || (a.age - b.age))
+  const show = due.slice(0, 4)
+  if (!show.length) return null
+  return (
+    <section className="card recall-card">
+      <div className="row between"><span className="tag">spaced recall</span><span className="mono dim">{due.length} due today</span></div>
+      <h2>Can you still explain these?</h2>
+      <p className="dim">Say it out loud in 30 seconds — no peeking. Shaky ones come back tomorrow.</p>
+      <ul className="recall-list">
+        {show.map((x) => (
+          <li key={x.cid}>
+            <div><b>{x.c}</b><small className="mono dim">{x.nd.title} · {x.again ? 'again today' : `ticked ${x.age} day${x.age > 1 ? 's' : ''} ago`}</small></div>
+            <div className="recall-btns">
+              <button className="btn" onClick={() => api.recall(x.cid, true)}>Got it</button>
+              <button className="btn ghost" onClick={() => api.recall(x.cid, false)}>Shaky</button>
+            </div>
+          </li>))}
+      </ul>
     </section>
   )
 }

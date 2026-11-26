@@ -27,7 +27,7 @@ export function Sheet({ open, onClose, children, title, wide }) {
       <div className={'sheet' + (wide ? ' wide' : '')} role="dialog" aria-label={title}>
         <div className="sheet-grab" />
         <div className="sheet-head"><h3>{title}</h3><button className="icon-btn" onClick={onClose} aria-label="Close">✕</button></div>
-        <div className="sheet-body">{children}</div>
+        <div className="sheet-body">{children}<button className="sheet-close" onClick={onClose}>Close</button></div>
       </div>
     </div>
   )

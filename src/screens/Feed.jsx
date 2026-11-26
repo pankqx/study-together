@@ -41,7 +41,7 @@ export default function Feed() {
   const byId = Object.fromEntries(users.map((u) => [u.id, u]))
   return (
     <div className="page feed">
-      <div className="sec-head"><h1>Proof wall</h1><span className="mono dim">receipts or it didn't happen</span></div>
+      <div className="sec-head"><h2>Proof wall</h2><span className="mono dim">photos of notes, code and whiteboards — receipts or it didn't happen</span></div>
       <Composer />
       {!posts.length && <Empty glyph="◫">No proof yet. Be the first.</Empty>}
       <div className="posts">
