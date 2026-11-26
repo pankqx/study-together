@@ -1,11 +1,10 @@
 import { useRef, useState } from 'react'
 import { useStore } from '../store.jsx'
-import { NODE, TRACK, ALL_NODES } from '../data/roadmap.js'
 import { colorOf, nickOf, compressImage, timeAgo } from '../lib/logic.js'
 import { Avatar, Empty, Reactions } from '../ui.jsx'
 
 export function Composer({ node: fixedNode, compact }) {
-  const { api, me } = useStore()
+  const { api, me, rm } = useStore()
   const [text, setText] = useState('')
   const [img, setImg] = useState(null)
   const [node, setNode] = useState(fixedNode || '')
@@ -27,7 +26,7 @@ export function Composer({ node: fixedNode, compact }) {
           {!fixedNode && (
             <select value={node} onChange={(e) => setNode(e.target.value)} className="select">
               <option value="">Tag a topic…</option>
-              {ALL_NODES.map((nd) => <option key={nd.id} value={nd.id}>{TRACK[nd.track].short} · {nd.title}</option>)}
+              {rm.ALL.map((nd) => <option key={nd.id} value={nd.id}>{rm.TRACK[nd.track].short} · {nd.title}</option>)}
             </select>)}
         </div>
         <button className="btn solid" disabled={busy || (!text.trim() && !img)} onClick={send}>{busy ? '…' : 'Post proof'}</button>
@@ -37,7 +36,7 @@ export function Composer({ node: fixedNode, compact }) {
 }
 
 export default function Feed() {
-  const { posts, users, me, api } = useStore()
+  const { posts, users, me, api, rm } = useStore()
   const [lightbox, setLightbox] = useState(null)
   const byId = Object.fromEntries(users.map((u) => [u.id, u]))
   return (
@@ -46,10 +45,10 @@ export default function Feed() {
       <Composer />
       {!posts.length && <Empty glyph="◫">No proof yet. Be the first.</Empty>}
       <div className="posts">
-        {posts.map((p) => { const u = byId[p.uid]; const nd = p.node && NODE[p.node]; return (
+        {posts.map((p) => { const u = byId[p.uid]; const nd = p.node && rm.NODE[p.node]; return (
           <article key={p.id} className="post" style={{ '--c': colorOf(u) }}>
             <header><Avatar u={u} size={34} /><div><b>{nickOf(u)}</b><small>{timeAgo(p.at)} ago</small></div>
-              {nd && <a className="tag" href={`#roadmap/${nd.track}/${nd.id}`}>{TRACK[nd.track].glyph} {nd.title}</a>}
+              {nd && <a className="tag" href={`#roadmap/${nd.track}/${nd.id}`}>{rm.TRACK[nd.track].glyph} {nd.title}</a>}
               {p.uid === me.id && <button className="icon-btn del" title="Delete" onClick={() => confirm('Delete this post?') && api.deletePost(p.id)}>🗑</button>}
             </header>
             {p.text && <p className="post-text">{p.text}</p>}

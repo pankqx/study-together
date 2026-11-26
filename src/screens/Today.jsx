@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useStore } from '../store.jsx'
-import { TRACKS, nodeProgress, conceptId, trackProgress } from '../data/roadmap.js'
+import { nodeProgress, conceptId, trackProgress, cText } from '../data/roadmap.js'
 import { PRONTOPY_URL } from '../config.js'
 import { stats, rank, nextUp, colorOf, nickOf, today } from '../lib/logic.js'
 import { Avatar, Bar, Check } from '../ui.jsx'
@@ -9,8 +9,8 @@ import { Echo } from '../art.jsx'
 const hello = () => { const h = new Date().getHours(); return h < 5 ? 'Still up' : h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening' }
 
 export default function Today() {
-  const { me, crew, posts, api } = useStore()
-  const s = stats(me, posts)
+  const { me, crew, posts, api, rm } = useStore()
+  const s = stats(me, posts, rm)
   const r = rank(s.xp)
   const focus = me?.focus?.length ? me.focus : ['de']
   const dsaToday = !!me?.dsa?.[today()]
@@ -54,7 +54,7 @@ export default function Today() {
 
       <section>
         <div className="sec-head"><h2>Next up</h2><span className="mono dim">pick your focus tracks</span></div>
-        <div className="chips">{TRACKS.map((t) => <button key={t.id} className={'chip' + (focus.includes(t.id) ? ' on' : '')} onClick={() => toggleFocus(t.id)}>{t.glyph} {t.title}</button>)}</div>
+        <div className="chips">{rm.tracks.map((t) => <button key={t.id} className={'chip' + (focus.includes(t.id) ? ' on' : '')} onClick={() => toggleFocus(t.id)}>{t.glyph} {t.title}</button>)}</div>
         <div className="next-grid">
           {focus.map((tid) => <NextCard key={tid} tid={tid} />)}
         </div>
@@ -63,7 +63,7 @@ export default function Today() {
       <section>
         <div className="sec-head"><h2>The crew today</h2><a href="#crew" className="mono">full standings →</a></div>
         <div className="crew-strip">
-          {crew.map((u) => { const us = stats(u, posts); return (
+          {crew.map((u) => { const us = stats(u, posts, rm); return (
             <div key={u.id} className="crew-mini" style={{ '--c': colorOf(u) }}>
               <Avatar u={u} size={44} ring={us.todayCount > 0} />
               <div><b>{nickOf(u)}</b><small>{us.todayCount} today · {us.streak}🔥</small></div>
@@ -75,9 +75,10 @@ export default function Today() {
 }
 
 function NextCard({ tid }) {
-  const { me, api, crew } = useStore()
-  const t = TRACKS.find((x) => x.id === tid)
-  const nd = nextUp(tid, me?.progress)
+  const { me, api, crew, rm } = useStore()
+  const t = rm.TRACK[tid]
+  if (!t) return null
+  const nd = nextUp(tid, me?.progress, rm)
   const tp = trackProgress(t, me?.progress)
   if (!nd) return <div className="card next done-track"><span className="tag">{t.glyph} {t.title}</span><h3>Track complete. Absolute legend. ★</h3></div>
   const p = nodeProgress(nd, me?.progress)
@@ -91,8 +92,8 @@ function NextCard({ tid }) {
           const cid = conceptId(nd.id, c)
           const others = crew.filter((u) => u.id !== me.id && u.progress?.[cid])
           return (
-            <div key={c} className="concept-row">
-              <Check on={!!me?.progress?.[cid]} onChange={(on) => api.toggleConcept(nd.id, c, on)} color={colorOf(me)}>{c}</Check>
+            <div key={cid} className="concept-row">
+              <Check on={!!me?.progress?.[cid]} onChange={(on) => api.toggleConcept(nd.id, c, on)} color={colorOf(me)}>{cText(c)}</Check>
               <span className="who">{others.map((u) => <i key={u.id} style={{ background: colorOf(u) }} title={nickOf(u)} />)}</span>
             </div>)
         })}

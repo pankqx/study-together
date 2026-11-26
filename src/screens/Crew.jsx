@@ -1,11 +1,11 @@
 import { useStore } from '../store.jsx'
-import { TRACKS, TOTAL_CONCEPTS, trackProgress } from '../data/roadmap.js'
+import { trackProgress } from '../data/roadmap.js'
 import { stats, rank, colorOf, nickOf, BADGES, today, addDays } from '../lib/logic.js'
 import { Avatar, Bar } from '../ui.jsx'
 
 export default function Crew() {
-  const { crew, posts } = useStore()
-  const rows = crew.map((u) => ({ u, s: stats(u, posts) })).sort((a, b) => b.s.xp - a.s.xp)
+  const { crew, posts, rmTeam: rm } = useStore()
+  const rows = crew.map((u) => ({ u, s: stats(u, posts, rm) })).sort((a, b) => b.s.xp - a.s.xp)
   const [lead, second] = rows
   const gap = lead && second ? lead.s.ticks - second.s.ticks : 0
   return (
@@ -18,8 +18,8 @@ export default function Crew() {
       </section>
 
       <section className="gaps">
-        <GapRow label="Everything" total={TOTAL_CONCEPTS} vals={rows.map(({ u, s }) => ({ u, v: s.ticks }))} big />
-        {TRACKS.map((t) => { const vals = rows.map(({ u }) => ({ u, v: trackProgress(t, u.progress).done })); return (
+        <GapRow label="Everything" total={rm.total} vals={rows.map(({ u, s }) => ({ u, v: s.ticks }))} big />
+        {rm.tracks.map((t) => { const vals = rows.map(({ u }) => ({ u, v: trackProgress(t, u.progress).done })); return (
           <GapRow key={t.id} label={`${t.glyph} ${t.title}`} total={trackProgress(t, {}).total} vals={vals} href={`#roadmap/${t.id}`} />) })}
       </section>
 

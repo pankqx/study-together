@@ -1,39 +1,28 @@
 rules_version = '2';
-// Paste this into Firebase console → Firestore Database → Rules.
-// Keep the email list in sync with CREW in src/config.js.
+// Paste into Firebase console → Firestore Database → Rules → Publish.
+// Open sign-up: any signed-in Google account can join.
 service cloud.firestore {
   match /databases/{database}/documents {
-    function crew() {
-      return request.auth != null && request.auth.token.email_verified == true
-        && request.auth.token.email.lower() in [
-          'pankqx@gmail.com',
-          'friend1@gmail.com',
-          'friend2@gmail.com'
-        ];
-    }
-    // profiles & progress: everyone in the crew can read, you can only write your own
-    match /users/{uid} {
-      allow read: if crew();
-      allow write: if crew() && request.auth.uid == uid;
-    }
-    // planner: crew can peek, only the owner edits
-    match /plans/{uid} {
-      allow read: if crew();
-      allow write: if crew() && request.auth.uid == uid;
-    }
-    // shared spaces
+    function signedIn() { return request.auth != null; }
+    function isMe(uid) { return signedIn() && request.auth.uid == uid; }
+
+    match /users/{uid}       { allow read: if signedIn(); allow write: if isMe(uid); }
+    match /plans/{uid}       { allow read: if signedIn(); allow write: if isMe(uid); }
+    match /notes/{uid}       { allow read, write: if isMe(uid); }           // private notes
+    match /roadmaps/team     { allow read, write: if signedIn(); }         // shared team roadmap
+    match /roadmaps/{uid}    { allow read: if signedIn(); allow write: if isMe(uid); }
+    match /roadmapLog/{id}   { allow read, create: if signedIn(); }
     match /posts/{id} {
-      allow read, create: if crew();
-      allow update: if crew();                                   // reactions
-      allow delete: if crew() && resource.data.uid == request.auth.uid;
+      allow read, create, update: if signedIn();
+      allow delete: if signedIn() && resource.data.uid == request.auth.uid;
     }
     match /messages/{id} {
-      allow read, create, update: if crew();
-      allow delete: if crew() && resource.data.uid == request.auth.uid;
+      allow read, create, update: if signedIn();
+      allow delete: if signedIn() && resource.data.uid == request.auth.uid;
     }
     match /boards/{id} {
-      allow read, write: if crew();
-      match /files/{fileId} { allow read, write: if crew(); }
+      allow read, write: if signedIn();
+      match /files/{fileId} { allow read, write: if signedIn(); }
     }
   }
 }

@@ -1,124 +1,363 @@
+import { useEffect, useMemo, useState } from 'react'
 import { useStore } from '../store.jsx'
-import { TRACKS, TRACK, NODE, JOURNEY, LEVELS, nodeProgress, trackProgress, conceptId } from '../data/roadmap.js'
+import { LEVELS, nodeProgress, trackProgress, conceptId, cText } from '../data/roadmap.js'
 import { PRONTOPY_URL } from '../config.js'
-import { colorOf, nickOf } from '../lib/logic.js'
-import { Avatar, Bar, Check, Ring, Sheet } from '../ui.jsx'
+import { colorOf, nickOf, initial, timeAgo } from '../lib/logic.js'
 import { Composer } from './Feed.jsx'
 import { go } from '../App.jsx'
 
+const LEVEL_ORDER = ['basic', 'core', 'advanced', 'pro']
+const host = (u) => { try { return new URL(u).hostname.replace(/^www\./, '') } catch { return '' } }
+const href = (u) => (u === 'prontopy' ? PRONTOPY_URL : u)
+const statusOf = (p) => (p.pct === 1 ? 'done' : p.done ? 'doing' : 'todo')
+
 export default function Roadmap({ track = 'journey', node }) {
-  const { me, crew } = useStore()
-  const nd = node && NODE[node]
+  const { me, rm, mode, api, crew } = useStore()
+  const [q, setQ] = useState('')
+  const [edit, setEdit] = useState(false)
+  const [showLog, setShowLog] = useState(false)
+  const all = useMemo(() => { let d = 0; rm.ALL.forEach((nd) => { d += nodeProgress(nd, me?.progress).done }); return d }, [rm, me])
+  const t = rm.TRACK[track]
+
   return (
-    <div className="page roadmap">
-      <div className="track-tabs">
-        <button className={'chip' + (track === 'journey' ? ' on' : '')} onClick={() => go('roadmap', 'journey')}>✕ Crossover journey</button>
-        {TRACKS.map((t) => { const p = trackProgress(t, me?.progress); return (
-          <button key={t.id} className={'chip' + (track === t.id ? ' on' : '')} onClick={() => go('roadmap', t.id)}>
-            {t.glyph} {t.title} <small>{Math.round(p.pct * 100)}%</small>
-          </button>) })}
+    <div className="rm">
+      <header className="rm-top">
+        <div className="rm-title">
+          <h1>Roadmap</h1>
+          <p className="rm-meta">{mode === 'team' ? 'Team roadmap' : 'My roadmap'} · {all}/{rm.total} concepts · {Math.round((all / rm.total) * 100)}%</p>
+        </div>
+        <div className="rm-controls">
+          <div className="rm-seg" role="tablist" aria-label="Which roadmap you follow">
+            <button className={mode === 'team' ? 'on' : ''} onClick={() => api.setMode('team')} title="Everyone follows the same roadmap">Team</button>
+            <button className={mode === 'mine' ? 'on' : ''} onClick={() => api.setMode('mine')} title="The team roadmap plus your own changes">Mine</button>
+          </div>
+          <input className="rm-search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search topics and concepts" />
+          <button className={'rm-btn' + (edit ? ' on' : '')} onClick={() => setEdit(!edit)}>{edit ? 'Done editing' : 'Edit'}</button>
+          <button className="rm-btn" onClick={() => setShowLog(true)}>Changes</button>
+        </div>
+      </header>
+
+      {edit && <EditBanner />}
+
+      <div className="rm-body">
+        <aside className="rm-side">
+          <select className="rm-select" value={track} onChange={(e) => go('roadmap', e.target.value)}>
+            <option value="journey">Crossover journey</option>
+            {rm.tracks.map((x) => <option key={x.id} value={x.id}>{x.title}</option>)}
+          </select>
+          <nav className="rm-tracks">
+            <TrackLink id="journey" label="Crossover journey" pct={null} active={track === 'journey'} />
+            <div className="rm-side-label">Tracks</div>
+            {rm.tracks.map((x) => <TrackLink key={x.id} id={x.id} label={x.title} pct={trackProgress(x, me?.progress).pct} active={track === x.id} />)}
+          </nav>
+        </aside>
+
+        <main className="rm-main">
+          {q.trim() ? <Search q={q.trim()} edit={edit} open={node} />
+            : track === 'journey' || !t ? <Journey edit={edit} open={node} />
+            : <TrackView t={t} edit={edit} open={node} />}
+        </main>
       </div>
-      {track === 'journey' ? <Journey /> : <TrackMap t={TRACK[track] || TRACKS[0]} />}
-      <Sheet open={!!nd} onClose={() => go('roadmap', track)} title={nd ? `${TRACK[nd.track].glyph} ${TRACK[nd.track].title}` : ''}>
-        {nd && <NodeDetail nd={nd} />}
-      </Sheet>
+
+      {showLog && <ChangeLog onClose={() => setShowLog(false)} />}
     </div>
   )
 }
 
-function CrewPips({ nd }) {
-  const { crew, me } = useStore()
-  return <span className="pips">{crew.map((u) => { const p = nodeProgress(nd, u.progress).pct; return (
-    <span key={u.id} className={'pip' + (p === 1 ? ' full' : '') + (u.id === me.id ? ' me' : '')} style={{ '--c': colorOf(u), '--p': p }} title={`${nickOf(u)} · ${Math.round(p * 100)}%`} />) })}</span>
+function TrackLink({ id, label, pct, active }) {
+  return (
+    <a href={'#roadmap/' + id} className={'rm-tl' + (active ? ' on' : '')}>
+      <span>{label}</span>
+      {pct !== null && <><em>{Math.round(pct * 100)}%</em><i style={{ width: pct * 100 + '%' }} /></>}
+    </a>
+  )
 }
 
-function TrackMap({ t }) {
-  const { me, crew } = useStore()
-  const tp = trackProgress(t, me?.progress)
-  let lastLevel = null
+function EditBanner() {
+  const { mode, api, myLayer } = useStore()
+  const mineCount = Object.keys(myLayer?.nodes || {}).length
   return (
-    <div className="track-map">
-      <header className="track-head">
-        <span className="track-glyph">{t.glyph}</span>
-        <div><h1>{t.title}</h1><p>{t.blurb}</p></div>
-        <div className="track-crew">{crew.map((u) => { const p = trackProgress(t, u.progress); return (
-          <div key={u.id} className="tc"><Avatar u={u} size={26} /><Bar pct={p.pct} color={colorOf(u)} h={6} /><small>{p.done}/{p.total}</small></div>) })}</div>
-      </header>
-      <ol className="spine">
-        {t.nodes.map((nd, i) => {
-          const p = nodeProgress(nd, me?.progress)
-          const levelBreak = nd.level !== lastLevel; lastLevel = nd.level
-          return (
-            <li key={nd.id} className={'spine-item ' + (i % 2 ? 'r' : 'l') + (p.pct === 1 ? ' done' : p.done ? ' doing' : '')}>
-              {levelBreak && <div className="level-mark"><span>{LEVELS[nd.level]}</span></div>}
-              <button className="node" onClick={() => go('roadmap', t.id, nd.id)} style={{ '--c': colorOf(me) }}>
-                <Ring pct={p.pct} size={40} stroke={4} color={colorOf(me)}>{p.pct === 1 ? '✓' : p.done || ''}</Ring>
-                <span className="node-t"><b>{nd.title}</b><small>{nd.concepts.length} concepts</small></span>
-                <CrewPips nd={nd} />
-              </button>
-            </li>)
-        })}
-      </ol>
+    <div className={'rm-banner ' + mode}>
+      {mode === 'team'
+        ? <p><b>Editing the team roadmap.</b> Every change is saved for all of you and shows up for everyone immediately.</p>
+        : <p><b>Editing your roadmap.</b> Only you see these changes. Updates to the team roadmap still reach you, except on topics you have changed yourself.</p>}
+      {mode === 'mine' && mineCount > 0 && (
+        <div className="rm-banner-actions">
+          <button className="rm-btn" onClick={() => confirm('Copy your personal changes into the team roadmap for everyone?') && api.copyMineToTeam()}>Copy my changes to team</button>
+          <button className="rm-btn danger" onClick={() => confirm('Remove all your personal changes and go back to the team roadmap?') && api.resetMine()}>Reset my roadmap</button>
+        </div>)}
     </div>
   )
 }
 
-function Journey() {
-  const { me, crew } = useStore()
+function CrewLine({ t, nodes }) {
+  const { crew } = useStore()
   return (
-    <div className="journey">
-      <header className="track-head">
-        <span className="track-glyph">✕</span>
-        <div><h1>Crossover journey</h1><p>Every domain, blended in the order they build on each other. Ticks here and in each track are the same ticks. No dates — clear a stage, move on.</p></div>
-      </header>
-      {JOURNEY.map((st) => {
-        const nodes = st.nodes.map((id) => NODE[id])
-        const pct = (u) => { let d = 0, t = 0; nodes.forEach((nd) => { const p = nodeProgress(nd, u?.progress); d += p.done; t += p.total }); return d / t }
-        const mine = pct(me)
+    <div className="rm-crew">
+      {crew.map((u) => {
+        let d = 0, tot = 0
+        ;(nodes || t.nodes).forEach((nd) => { const p = nodeProgress(nd, u.progress); d += p.done; tot += p.total })
+        const pct = tot ? d / tot : 0
         return (
-          <section key={st.id} className={'stage' + (mine === 1 ? ' clear' : '')}>
-            <div className="stage-head">
-              <div><h2>{st.title}</h2><p>{st.blurb}</p></div>
-              <div className="stage-crew">{crew.map((u) => <span key={u.id} className="sc" style={{ '--c': colorOf(u) }}><Avatar u={u} size={22} /><b>{Math.round(pct(u) * 100)}%</b></span>)}</div>
-            </div>
-            <div className="stage-nodes">
-              {nodes.map((nd) => { const p = nodeProgress(nd, me?.progress); return (
-                <button key={nd.id} className={'jnode' + (p.pct === 1 ? ' done' : p.done ? ' doing' : '')} onClick={() => go('roadmap', 'journey', nd.id)} style={{ '--c': colorOf(me), '--p': p.pct }}>
-                  <span className="jt">{TRACK[nd.track].short}</span>{nd.title}<CrewPips nd={nd} />
-                </button>) })}
-            </div>
-          </section>)
+          <div key={u.id} className="rm-crew-row" title={`${nickOf(u)}: ${d}/${tot}`}>
+            <span className="rm-dot" style={{ background: colorOf(u) }} /><span className="rm-crew-name">{nickOf(u)}</span>
+            <span className="rm-crew-bar"><i style={{ width: pct * 100 + '%', background: colorOf(u) }} /></span>
+            <span className="rm-num">{Math.round(pct * 100)}%</span>
+          </div>)
       })}
     </div>
   )
 }
 
-function NodeDetail({ nd }) {
-  const { me, crew, api } = useStore()
-  const p = nodeProgress(nd, me?.progress)
-  const href = (u) => (u === 'prontopy' ? PRONTOPY_URL : u)
+function TrackView({ t, edit, open }) {
+  const { me } = useStore()
+  const [filter, setFilter] = useState('all')
+  const [adding, setAdding] = useState(false)
+  const tp = trackProgress(t, me?.progress)
+  const counts = { all: t.nodes.length, todo: 0, doing: 0, done: 0 }
+  t.nodes.forEach((nd) => counts[statusOf(nodeProgress(nd, me?.progress))]++)
+  const shown = t.nodes.filter((nd) => filter === 'all' || statusOf(nodeProgress(nd, me?.progress)) === filter)
+  const levels = [...LEVEL_ORDER, ...new Set(shown.map((nd) => nd.level).filter((l) => !LEVEL_ORDER.includes(l)))]
   return (
-    <div className="node-detail">
-      <div className="nd-head">
-        <Ring pct={p.pct} size={64} stroke={6} color={colorOf(me)}><b>{Math.round(p.pct * 100)}</b></Ring>
-        <div><h2>{nd.title}</h2><span className="tag">{LEVELS[nd.level]}</span></div>
+    <section>
+      <div className="rm-head">
+        <div>
+          <h2>{t.title}</h2>
+          <p className="rm-blurb">{t.blurb}</p>
+          <p className="rm-meta">{t.nodes.length} topics · {tp.total} concepts · {tp.done} done · {Math.round(tp.pct * 100)}%</p>
+        </div>
+        <CrewLine t={t} />
       </div>
-      <h4>Concepts</h4>
-      <div className="concepts">
+      <div className="rm-filters">
+        {[['all', 'All'], ['todo', 'Not started'], ['doing', 'In progress'], ['done', 'Done']].map(([k, l]) => (
+          <button key={k} className={filter === k ? 'on' : ''} onClick={() => setFilter(k)}>{l} <span>{counts[k]}</span></button>))}
+      </div>
+      {levels.map((lv) => {
+        const rows = shown.filter((nd) => nd.level === lv)
+        if (!rows.length) return null
+        return (
+          <div key={lv} className="rm-level">
+            <div className="rm-level-label"><span>{LEVELS[lv] || lv}</span><em>{rows.length}</em></div>
+            {rows.map((nd) => <Row key={nd.id} nd={nd} t={t} edit={edit} openId={open} routeTrack={t.id} />)}
+          </div>)
+      })}
+      {!shown.length && <p className="rm-empty">Nothing here with this filter.</p>}
+      {edit && (adding
+        ? <Editor initial={{ track: t.id, title: '', level: 'core', doneWhen: '', concepts: [{ text: '' }], resources: [] }} isNew onClose={() => setAdding(false)} />
+        : <button className="rm-add" onClick={() => setAdding(true)}>＋ Add a topic to {t.title}</button>)}
+    </section>
+  )
+}
+
+function Journey({ edit, open }) {
+  const { rm, me } = useStore()
+  return (
+    <section>
+      <div className="rm-head">
+        <div>
+          <h2>Crossover journey</h2>
+          <p className="rm-blurb">Every domain in the order they build on each other. These are the same topics as in the tracks, so ticking a concept here ticks it there too.</p>
+        </div>
+      </div>
+      {rm.journey.map((st, i) => {
+        const nodes = st.nodes.map((id) => rm.NODE[id])
+        let d = 0, tot = 0; nodes.forEach((nd) => { const p = nodeProgress(nd, me?.progress); d += p.done; tot += p.total })
+        return (
+          <div key={st.id} className="rm-level">
+            <div className="rm-level-label stage"><span>Stage {i + 1} · {st.title}</span><em>{d}/{tot}</em></div>
+            <p className="rm-stage-blurb">{st.blurb}</p>
+            {nodes.map((nd) => <Row key={nd.id} nd={nd} t={rm.TRACK[nd.track]} edit={edit} openId={open} routeTrack="journey" showTrack />)}
+          </div>)
+      })}
+    </section>
+  )
+}
+
+function Search({ q, edit, open }) {
+  const { rm } = useStore()
+  const needle = q.toLowerCase()
+  const hits = rm.ALL.filter((nd) => nd.title.toLowerCase().includes(needle) || nd.concepts.some((c) => cText(c).toLowerCase().includes(needle)))
+  return (
+    <section>
+      <div className="rm-head"><div><h2>Search</h2><p className="rm-meta">{hits.length} topic{hits.length === 1 ? '' : 's'} match “{q}”</p></div></div>
+      {hits.map((nd) => <Row key={nd.id} nd={nd} t={rm.TRACK[nd.track]} edit={edit} openId={open} routeTrack={nd.track} showTrack highlight={needle} />)}
+      {!hits.length && <p className="rm-empty">No topic or concept matches. Try fewer words.</p>}
+    </section>
+  )
+}
+
+function Row({ nd, t, edit, openId, routeTrack, showTrack, highlight }) {
+  const { me, crew, rm } = useStore()
+  const [open, setOpen] = useState(openId === nd.id)
+  useEffect(() => { if (openId === nd.id) setOpen(true) }, [openId, nd.id])
+  const p = nodeProgress(nd, me?.progress)
+  const st = statusOf(p)
+  const here = crew.filter((u) => u.current === nd.id)
+  const src = rm.source[nd.id]
+  return (
+    <div className={'rm-row ' + st + (open ? ' open' : '')} id={'n-' + nd.id}>
+      <button className="rm-row-main" onClick={() => setOpen(!open)} aria-expanded={open}>
+        <span className={'rm-status ' + st} style={{ '--p': p.pct }} aria-label={st}>{st === 'done' ? '✓' : ''}</span>
+        <span className="rm-row-title">
+          <b>{nd.title}</b>
+          <span className="rm-tags">
+            {showTrack && <em>{t?.title}</em>}
+            {src && <em className="tag-edit">{src === 'team' ? 'team edit' : 'my edit'}</em>}
+            {here.map((u) => <em key={u.id} className="tag-here" style={{ '--c': colorOf(u) }}>{u.id === me.id ? 'you are here' : nickOf(u) + ' is here'}</em>)}
+          </span>
+        </span>
+        <span className="rm-pips">{crew.map((u) => { const up = nodeProgress(nd, u.progress).pct; return <i key={u.id} title={`${nickOf(u)} ${Math.round(up * 100)}%`} className={up === 1 ? 'full' : ''} style={{ '--c': colorOf(u), '--p': up }} /> })}</span>
+        <span className="rm-num">{p.done}/{p.total}</span>
+        <span className="rm-chev" aria-hidden>{open ? '–' : '+'}</span>
+      </button>
+      <span className="rm-row-bar"><i style={{ width: p.pct * 100 + '%' }} /></span>
+      {open && <Detail nd={nd} t={t} edit={edit} highlight={highlight} />}
+    </div>
+  )
+}
+
+function Detail({ nd, t, edit, highlight }) {
+  const { me, crew, api, notes, mode, rm, users } = useStore()
+  const [editing, setEditing] = useState(false)
+  const [proof, setProof] = useState(false)
+  const [note, setNote] = useState(notes[nd.id]?.text || '')
+  const [saved, setSaved] = useState(false)
+  useEffect(() => setNote(notes[nd.id]?.text || ''), [notes[nd.id]?.text])
+  const p = nodeProgress(nd, me?.progress)
+  const editor = users.find((u) => u.id === nd.editedBy)
+  if (editing) return <Editor initial={nd} onClose={() => setEditing(false)} />
+  return (
+    <div className="rm-detail">
+      <div className="rm-concepts">
+        <div className="rm-sub">Concepts</div>
         {nd.concepts.map((c) => {
-          const cid = conceptId(nd.id, c)
+          const cid = conceptId(nd.id, c), on = !!me?.progress?.[cid]
+          const txt = cText(c)
           return (
-            <div key={c} className="concept-row">
-              <Check on={!!me?.progress?.[cid]} onChange={(on) => api.toggleConcept(nd.id, c, on)} color={colorOf(me)}>{c}</Check>
-              <span className="who">{crew.filter((u) => u.id !== me.id && u.progress?.[cid]).map((u) => <i key={u.id} style={{ background: colorOf(u) }} title={nickOf(u)} />)}</span>
-            </div>)
+            <label key={cid} className={'rm-check' + (on ? ' on' : '') + (highlight && txt.toLowerCase().includes(highlight) ? ' hit' : '')}>
+              <input type="checkbox" checked={on} onChange={(e) => api.toggleConcept(nd.id, c, e.target.checked)} />
+              <span className="rm-box" aria-hidden>{on ? '✓' : ''}</span>
+              <span className="rm-ctext">{txt}</span>
+              <span className="rm-who">{crew.filter((u) => u.id !== me.id && u.progress?.[cid]).map((u) => <i key={u.id} style={{ color: colorOf(u) }} title={nickOf(u)}>{initial(u)}</i>)}</span>
+            </label>)
         })}
+        {!nd.concepts.length && <p className="rm-empty">No concepts yet. Use Edit to add some.</p>}
+        <div className="rm-actions">
+          {p.pct < 1 ? <button className="rm-btn" onClick={() => api.setNodeDone(nd, true)}>Mark all done</button>
+            : <button className="rm-btn" onClick={() => api.setNodeDone(nd, false)}>Clear all</button>}
+          {me?.current === nd.id ? <button className="rm-btn" onClick={() => api.setCurrent(null)}>Unset current topic</button>
+            : <button className="rm-btn" onClick={() => api.setCurrent(nd.id)}>Set as my current topic</button>}
+          <button className="rm-btn" onClick={() => setProof(!proof)}>{proof ? 'Close' : 'Post proof'}</button>
+        </div>
+        {proof && <div className="rm-proof"><Composer node={nd.id} compact /></div>}
       </div>
-      <h4>Where to learn</h4>
-      <ul className="res">{nd.resources.map((r) => <li key={r.t}><a href={href(r.u)} target={r.u.startsWith('#') ? undefined : '_blank'} rel="noreferrer">{r.t} ↗</a></li>)}</ul>
-      <div className="done-when big">✓ Done when: {nd.doneWhen}</div>
-      <h4>Post proof</h4>
-      <Composer node={nd.id} compact />
+
+      <div className="rm-aside">
+        {nd.doneWhen && <div className="rm-block"><div className="rm-sub">Done when</div><p>{nd.doneWhen}</p></div>}
+        <div className="rm-block">
+          <div className="rm-sub">Where to learn</div>
+          {nd.resources.length ? <ul className="rm-res">{nd.resources.map((r, i) => (
+            <li key={i}><a href={href(r.u)} target={r.u.startsWith('#') ? undefined : '_blank'} rel="noreferrer">{r.t}</a><span>{r.u === 'prontopy' ? 'prontopy' : host(r.u)}</span></li>))}</ul>
+            : <p className="rm-empty">No resources yet.</p>}
+        </div>
+        <div className="rm-block">
+          <div className="rm-sub">My notes <span className="rm-private">private</span>{saved && <span className="rm-saved">saved</span>}</div>
+          <textarea className="rm-note" rows={4} value={note} placeholder="Key takeaways, links, what confused you…"
+            onChange={(e) => { setNote(e.target.value); setSaved(false) }}
+            onBlur={async () => { if (note !== (notes[nd.id]?.text || '')) { await api.saveNote(nd.id, note.trim()); setSaved(true) } }} />
+        </div>
+        {(nd.editedAt || edit) && (
+          <div className="rm-block rm-editmeta">
+            {nd.editedAt && <p className="rm-meta">Last edited by {nickOf(editor) || 'someone'} · {timeAgo(nd.editedAt)} ago ({rm.source[nd.id] === 'mine' ? 'your roadmap' : 'team roadmap'})</p>}
+            {edit && (
+              <div className="rm-actions">
+                <button className="rm-btn" onClick={() => setEditing(true)}>Edit topic</button>
+                <button className="rm-btn" onClick={() => api.moveNode(mode, t, nd, -1)} title="Move up">↑</button>
+                <button className="rm-btn" onClick={() => api.moveNode(mode, t, nd, 1)} title="Move down">↓</button>
+                {rm.source[nd.id] === mode && !nd.id.startsWith('n-') && <button className="rm-btn" onClick={() => api.resetNode(mode, nd)}>Restore original</button>}
+                <button className="rm-btn danger" onClick={() => confirm(`Remove “${nd.title}” from the ${mode === 'team' ? 'team' : 'your'} roadmap?`) && api.deleteNode(mode, nd)}>Remove</button>
+              </div>)}
+          </div>)}
+      </div>
+    </div>
+  )
+}
+
+function Editor({ initial, isNew, onClose }) {
+  const { api, mode, rm } = useStore()
+  const [f, setF] = useState(() => ({
+    ...initial,
+    concepts: (initial.concepts || []).map((c) => (typeof c === 'string' ? { text: c } : { ...c })),
+    resources: (initial.resources || []).map((r) => ({ ...r })),
+  }))
+  const [busy, setBusy] = useState(false)
+  const set = (k, v) => setF({ ...f, [k]: v })
+  const setC = (i, v) => set('concepts', f.concepts.map((c, j) => (j === i ? { ...c, text: v } : c)))
+  const moveC = (i, d) => { const a = [...f.concepts]; const j = i + d; if (j < 0 || j >= a.length) return; [a[i], a[j]] = [a[j], a[i]]; set('concepts', a) }
+  const setR = (i, k, v) => set('resources', f.resources.map((r, j) => (j === i ? { ...r, [k]: v } : r)))
+  const save = async () => { if (!f.title.trim()) return; setBusy(true); const id = await api.saveNode(mode, f, isNew); setBusy(false); onClose(); if (isNew) go('roadmap', f.track, id) }
+  return (
+    <div className="rm-editor">
+      <p className="rm-scope">{isNew ? 'New topic' : 'Editing topic'} · saves to <b>{mode === 'team' ? 'the team roadmap (everyone)' : 'your roadmap (only you)'}</b></p>
+      <label className="rm-field"><span>Title</span><input value={f.title} onChange={(e) => set('title', e.target.value)} placeholder="e.g. Data contracts" autoFocus /></label>
+      <div className="rm-field-row">
+        <label className="rm-field"><span>Track</span>
+          <select value={f.track} onChange={(e) => set('track', e.target.value)}>{rm.tracks.map((t) => <option key={t.id} value={t.id}>{t.title}</option>)}</select></label>
+        <label className="rm-field"><span>Level</span>
+          <select value={f.level} onChange={(e) => set('level', e.target.value)}>{LEVEL_ORDER.map((l) => <option key={l} value={l}>{LEVELS[l]}</option>)}</select></label>
+      </div>
+      <div className="rm-field"><span>Concepts</span>
+        {f.concepts.map((c, i) => (
+          <div key={i} className="rm-line">
+            <input value={c.text} onChange={(e) => setC(i, e.target.value)} placeholder="Concept"
+              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); const a = [...f.concepts]; a.splice(i + 1, 0, { text: '' }); set('concepts', a) } }} />
+            <button type="button" onClick={() => moveC(i, -1)} aria-label="Move up">↑</button>
+            <button type="button" onClick={() => moveC(i, 1)} aria-label="Move down">↓</button>
+            <button type="button" onClick={() => set('concepts', f.concepts.filter((_, j) => j !== i))} aria-label="Remove">×</button>
+          </div>))}
+        <button type="button" className="rm-link" onClick={() => set('concepts', [...f.concepts, { text: '' }])}>＋ Add concept</button>
+        {!isNew && <small className="rm-hint">Renaming a concept keeps everyone's ticks. Deleting one removes it from progress.</small>}
+      </div>
+      <div className="rm-field"><span>Resources</span>
+        {f.resources.map((r, i) => (
+          <div key={i} className="rm-line">
+            <input value={r.t} onChange={(e) => setR(i, 't', e.target.value)} placeholder="Name" />
+            <input value={r.u} onChange={(e) => setR(i, 'u', e.target.value)} placeholder="https://…" />
+            <button type="button" onClick={() => set('resources', f.resources.filter((_, j) => j !== i))} aria-label="Remove">×</button>
+          </div>))}
+        <button type="button" className="rm-link" onClick={() => set('resources', [...f.resources, { t: '', u: '' }])}>＋ Add resource</button>
+      </div>
+      <label className="rm-field"><span>Done when</span><input value={f.doneWhen} onChange={(e) => set('doneWhen', e.target.value)} placeholder="How you know you've really learned it" /></label>
+      <div className="rm-actions">
+        <button className="rm-btn solid" disabled={busy || !f.title.trim()} onClick={save}>{busy ? 'Saving…' : 'Save'}</button>
+        <button className="rm-btn" onClick={onClose}>Cancel</button>
+      </div>
+    </div>
+  )
+}
+
+function ChangeLog({ onClose }) {
+  const { be, users, rm, auth } = useStore()
+  const [rows, setRows] = useState([])
+  useEffect(() => be.watchCol('roadmapLog', setRows, { orderBy: 'at', desc: true, limit: 60 }), [be])
+  const byId = Object.fromEntries(users.map((u) => [u.id, u]))
+  useEffect(() => { const k = (e) => e.key === 'Escape' && onClose(); window.addEventListener('keydown', k); return () => window.removeEventListener('keydown', k) }, [])
+  const visible = rows.filter((r) => r.scope === 'team' || r.uid === auth.uid)
+  return (
+    <div className="rm-drawer-wrap" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+      <aside className="rm-drawer">
+        <div className="rm-drawer-head"><h3>Changes</h3><button className="rm-btn" onClick={onClose}>Close</button></div>
+        <p className="rm-meta">Edits to the team roadmap, plus your own personal edits.</p>
+        <ol className="rm-log">
+          {visible.map((r) => (
+            <li key={r.id}>
+              <span className="rm-dot" style={{ background: colorOf(byId[r.uid]) }} />
+              <div><b>{nickOf(byId[r.uid]) || 'Someone'}</b> {r.action} <q>{r.title}</q>{r.track && rm.TRACK[r.track] ? <> in {rm.TRACK[r.track].title}</> : null}
+                <small>{timeAgo(r.at)} ago · {r.scope === 'team' ? 'team roadmap' : 'personal'}</small></div>
+            </li>))}
+          {!visible.length && <li className="rm-empty">No edits yet.</li>}
+        </ol>
+      </aside>
     </div>
   )
 }

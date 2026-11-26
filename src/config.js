@@ -14,7 +14,8 @@ export const firebaseConfig = {
   appId: '',
 }
 
-// 2) The crew. Only these Google accounts can sign in. Order = colour order.
+// 2) The crew. Their nicknames, colours and portraits are set automatically.
+//    Anyone with a Google account can sign in while OPEN_SIGNUP is true.
 export const CREW = [
   { email: 'pankqx@gmail.com', nick: 'Pank' },
   { email: 'friend1@gmail.com', nick: 'Friend 1' },
@@ -26,5 +27,7 @@ export const GIPHY_KEY = ''
 
 // 4) Where your DSA practice lives.
 export const PRONTOPY_URL = 'https://pankqx.github.io/pythondsa/'
+
+export const OPEN_SIGNUP = true
 
 export const DEMO = !firebaseConfig.apiKey

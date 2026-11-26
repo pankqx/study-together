@@ -1,4 +1,4 @@
-import { ALL_NODES, NODE, TRACKS, TOTAL_CONCEPTS, conceptId, nodeProgress, trackProgress } from '../data/roadmap.js'
+import { BASE, NODE, conceptId, nodeProgress, trackProgress } from '../data/roadmap.js'
 import { CREW } from '../config.js'
 
 export const COLORS = ['#ef3b2d', '#ffc93c', '#d29457', '#7b61ff', '#18b38a'] // pepperoni, cheese, crust
@@ -7,7 +7,10 @@ export const today = (d = new Date()) => { const x = new Date(d); x.setMinutes(x
 export const addDays = (iso, n) => { const d = new Date(iso + 'T12:00:00'); d.setDate(d.getDate() + n); return today(d) }
 
 export function crewIndex(email) { const i = CREW.findIndex((c) => c.email.toLowerCase() === (email || '').toLowerCase()); return i }
-export function colorOf(u) { const i = crewIndex(u?.email); return COLORS[(i < 0 ? 4 : i) % COLORS.length] }
+const hash = (str = '') => { let h = 0; for (const ch of str) h = (h * 31 + ch.charCodeAt(0)) | 0; return Math.abs(h) }
+export function colorOf(u) { if (u?.color) return u.color; const i = crewIndex(u?.email); return COLORS[(i < 0 ? hash(u?.id || u?.email) : i) % COLORS.length] }
+export const CHAR_DEFAULT = ['polo', 'specs', 'waves']
+export function charOf(u) { if (u?.char !== undefined) return u.char; const i = crewIndex(u?.email); return i >= 0 ? CHAR_DEFAULT[i] : null }
 export function nickOf(u) { const i = crewIndex(u?.email); return u?.nick || (i >= 0 ? CREW[i].nick : null) || (u?.name || 'Someone').split(' ')[0] }
 export const initial = (u) => nickOf(u).slice(0, 1).toUpperCase()
 
@@ -24,15 +27,15 @@ export function bestStreak(activity = {}) {
   return best
 }
 
-export function stats(u, posts = []) {
+export function stats(u, posts = [], rm = BASE) {
   const p = u?.progress || {}
-  const ticks = Object.keys(p).length
-  const nodesDone = ALL_NODES.filter((nd) => nodeProgress(nd, p).pct === 1).length
-  const tracksDone = TRACKS.filter((t) => trackProgress(t, p).pct === 1).length
+  const ticks = rm.ALL.reduce((a, nd) => a + nodeProgress(nd, p).done, 0)
+  const nodesDone = rm.ALL.filter((nd) => nodeProgress(nd, p).pct === 1).length
+  const tracksDone = rm.tracks.filter((t) => trackProgress(t, p).pct === 1).length
   const dsaDays = Object.keys(u?.dsa || {}).length
   const myPosts = posts.filter((x) => x.uid === u?.id).length
   const xp = ticks * 10 + nodesDone * 50 + tracksDone * 300 + dsaDays * 20 + myPosts * 15
-  return { ticks, nodesDone, tracksDone, dsaDays, posts: myPosts, xp, pct: ticks / TOTAL_CONCEPTS, streak: streak(u?.activity), best: bestStreak(u?.activity), todayCount: u?.activity?.[today()] || 0 }
+  return { ticks, nodesDone, tracksDone, dsaDays, posts: myPosts, xp, pct: rm.total ? ticks / rm.total : 0, streak: streak(u?.activity), best: bestStreak(u?.activity), todayCount: u?.activity?.[today()] || 0 }
 }
 
 export const RANKS = [
@@ -55,8 +58,8 @@ export const BADGES = [
   { id: 'proof10', glyph: '◫', name: '10 proofs posted', test: (s) => s.posts >= 10 },
 ]
 
-export function nextUp(trackId, progress) {
-  const t = TRACKS.find((x) => x.id === trackId)
+export function nextUp(trackId, progress, rm = BASE) {
+  const t = rm.TRACK[trackId]
   if (!t) return null
   return t.nodes.find((nd) => nodeProgress(nd, progress).pct < 1) || null
 }

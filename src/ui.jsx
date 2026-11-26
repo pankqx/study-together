@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { colorOf, initial, nickOf, inkOn } from './lib/logic.js'
+import { colorOf, initial, nickOf, inkOn, charOf } from './lib/logic.js'
+import { Bust } from './people.jsx'
 
 export const REACTIONS = { fire: '🔥', clap: '👏', brain: '🧠', lol: '😂', skull: '💀', heart: '❤️' }
 
@@ -8,7 +9,7 @@ export function Avatar({ u, size = 32, ring, title }) {
   return (
     <span className={'av' + (ring ? ' ring' : '')} title={title || nickOf(u)}
       style={{ '--c': colorOf(u), color: inkOn(colorOf(u)), width: size, height: size, fontSize: size * 0.44 }}>
-      {u?.photo && !bad ? <img src={u.photo} alt="" referrerPolicy="no-referrer" onError={() => setBad(true)} /> : initial(u)}
+      {charOf(u) ? <Bust who={charOf(u)} size={size} /> : u?.photo && !bad ? <img src={u.photo} alt="" referrerPolicy="no-referrer" onError={() => setBad(true)} /> : initial(u)}
     </span>
   )
 }

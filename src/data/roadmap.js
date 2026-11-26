@@ -176,7 +176,7 @@ export const TRACKS = [
         [R('SQLBolt', 'https://sqlbolt.com/'), R('PostgreSQL Exercises', 'https://pgexercises.com/')], 'All of SQLBolt done.'),
       n('db-sql2', 'Advanced SQL', 'core',
         ['Subqueries & CTEs', 'Recursive CTEs', 'Window functions (ROW_NUMBER, LAG, running totals)', 'CASE, COALESCE, date functions', 'Views & materialised views'],
-        [R('Mode SQL tutorial', 'https://mode.com/sql-tutorial/'), R('DataLemur SQL', 'https://datalemur.com/sql-tutorial')],
+        [R('ThoughtSpot SQL tutorial (ex-Mode)', 'https://www.thoughtspot.com/sql-tutorial'), R('DataLemur SQL', 'https://datalemur.com/sql-tutorial')],
         'You can solve DataLemur medium problems.'),
       n('db-norm', 'Normalisation', 'core',
         ['Functional dependencies', '1NF, 2NF, 3NF, BCNF', 'When to denormalise'], [R('CMU 15-445', 'https://15445.courses.cs.cmu.edu/')],
@@ -359,7 +359,7 @@ export const TRACKS = [
         'You processed a multi-GB dataset with PySpark and tuned it.'),
       n('de-lake', 'Lakehouse', 'advanced',
         ['Data lake vs warehouse vs lakehouse', 'Delta Lake & Apache Iceberg', 'Medallion architecture (bronze/silver/gold)', 'Time travel & schema evolution', 'Databricks Free Edition'],
-        [R('Delta Lake', 'https://delta.io/'), R('Apache Iceberg', 'https://iceberg.apache.org/')], 'You built bronze → silver → gold tables.'),
+        [R('Delta Lake', 'https://delta.io/'), R('Apache Iceberg', 'https://iceberg.apache.org/'), R('Databricks Free Edition', 'https://www.databricks.com/learn/free-edition')], 'You built bronze → silver → gold tables.'),
       n('de-stream', 'Streaming fundamentals', 'advanced',
         ['Events, event time vs processing time', 'Windows & watermarks', 'Delivery guarantees', 'Stateful processing'],
         [R('Confluent courses', 'https://developer.confluent.io/courses/')], 'You can explain watermarks to a friend.'),
@@ -480,10 +480,10 @@ export const TRACKS = [
         [R('Build Your Own X', 'https://github.com/codecrafters-io/build-your-own-x')], 'It survives a kill -9 without losing data.'),
       n('cap-batch', 'Batch data platform on AWS', 'advanced',
         ['Ingest a public dataset (e.g. data.gov.in) with dlt', 'Land raw data in S3', 'Orchestrate with Airflow', 'Model with dbt into a warehouse', 'Dashboard in Metabase', 'Infra in Terraform'],
-        [R('DE Zoomcamp project guide', 'https://github.com/DataTalksClub/data-engineering-zoomcamp/tree/main/projects')], 'Runs daily, by itself, with tests.'),
+        [R('DE Zoomcamp (see its project guide)', 'https://github.com/DataTalksClub/data-engineering-zoomcamp')], 'Runs daily, by itself, with tests.'),
       n('cap-stream', 'Real-time pipeline', 'pro',
         ['Live event source (e.g. Wikimedia recent-changes stream)', 'Kafka', 'Spark Structured Streaming', 'Store in Postgres / ClickHouse', 'Live dashboard'],
-        [R('Wikimedia EventStreams', 'https://wikitech.wikimedia.org/wiki/Event_Platform/EventStreams')], 'Dashboard updates within seconds.'),
+        [R('Wikimedia recent changes stream', 'https://www.mediawiki.org/wiki/API:Recent_changes_stream')], 'Dashboard updates within seconds.'),
       n('cap-lake', 'Lakehouse at scale', 'pro',
         ['Large open dataset (e.g. NYC taxi trips)', 'Spark + Iceberg/Delta', 'Medallion layers', 'Performance tuning write-up'],
         [R('NYC TLC trip data', 'https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page')], 'Blog post comparing before/after tuning.'),
@@ -531,20 +531,65 @@ export const JOURNEY = [
 
 export const LEVELS = { basic: 'Basic', core: 'Core', advanced: 'Advanced', pro: 'Pro' }
 
-// helpers
+// ─────────────────────────────────────────────────────────────
+//  helpers — concepts may be plain strings (built-in) or {id, text} (edited)
+// ─────────────────────────────────────────────────────────────
 export const slug = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '').slice(0, 60)
-export const conceptId = (nodeId, c) => `${nodeId}__${slug(c)}` // no dots: safe as a Firestore field path
-export const ALL_NODES = TRACKS.flatMap((t) => t.nodes.map((nd) => ({ ...nd, track: t.id })))
-export const NODE = Object.fromEntries(ALL_NODES.map((nd) => [nd.id, nd]))
-export const TRACK = Object.fromEntries(TRACKS.map((t) => [t.id, t]))
-export const TOTAL_CONCEPTS = ALL_NODES.reduce((a, nd) => a + nd.concepts.length, 0)
+export const cText = (c) => (typeof c === 'string' ? c : c.text)
+export const cKey = (c) => (typeof c === 'string' ? slug(c) : c.id)
+export const conceptId = (nodeId, c) => `${nodeId}__${cKey(c)}` // no dots: safe as a Firestore field path
 
 export function nodeProgress(nd, progress) {
   const done = nd.concepts.filter((c) => progress?.[conceptId(nd.id, c)]).length
-  return { done, total: nd.concepts.length, pct: done / nd.concepts.length }
+  const total = nd.concepts.length
+  return { done, total, pct: total ? done / total : 0 }
 }
 export function trackProgress(t, progress) {
   let d = 0, tot = 0
   for (const nd of t.nodes) { const p = nodeProgress(nd, progress); d += p.done; tot += p.total }
   return { done: d, total: tot, pct: tot ? d / tot : 0 }
 }
+
+const norm = (nd, track) => ({ ...nd, track, concepts: (nd.concepts || []).map((c) => (typeof c === 'string' ? { id: slug(c), text: c } : c)), resources: nd.resources || [] })
+
+// Build a roadmap from the built-in base plus edit layers, applied in order.
+// A layer: { nodes: { [nodeId]: fullNode | { deleted: true } }, order: { [trackId]: [nodeIds] } }
+export function resolve(layers = []) {
+  const tracks = TRACKS.map((t) => ({ ...t, nodes: t.nodes.map((nd) => norm(nd, t.id)) }))
+  const T = Object.fromEntries(tracks.map((t) => [t.id, t]))
+  const source = {}
+  for (const L of layers) {
+    if (!L) continue
+    for (const [id, patch] of Object.entries(L.nodes || {})) {
+      if (!patch) continue
+      const from = tracks.find((t) => t.nodes.some((x) => x.id === id))
+      if (patch.deleted) { if (from) from.nodes = from.nodes.filter((x) => x.id !== id); source[id] = L.name; continue }
+      const old = from?.nodes.find((x) => x.id === id)
+      const trackId = patch.track || old?.track
+      const to = T[trackId]; if (!to) continue
+      const merged = norm({ ...(old || {}), ...patch, id }, trackId)
+      if (from && from !== to) from.nodes = from.nodes.filter((x) => x.id !== id)
+      const i = to.nodes.findIndex((x) => x.id === id)
+      if (i >= 0) to.nodes[i] = merged; else to.nodes.push(merged)
+      source[id] = L.name
+    }
+    for (const [tid, ids] of Object.entries(L.order || {})) {
+      const t = T[tid]; if (!t || !Array.isArray(ids)) continue
+      const m = new Map(t.nodes.map((x) => [x.id, x]))
+      t.nodes = [...ids.filter((i) => m.has(i)).map((i) => m.get(i)), ...t.nodes.filter((x) => !ids.includes(x.id))]
+    }
+  }
+  const ALL = tracks.flatMap((t) => t.nodes)
+  const NODE = Object.fromEntries(ALL.map((x) => [x.id, x]))
+  return {
+    tracks, TRACK: T, NODE, ALL, source,
+    total: ALL.reduce((a, x) => a + x.concepts.length, 0),
+    journey: JOURNEY.map((st) => ({ ...st, nodes: st.nodes.filter((i) => NODE[i]) })),
+  }
+}
+
+export const BASE = resolve([])
+export const ALL_NODES = BASE.ALL
+export const NODE = BASE.NODE
+export const TRACK = BASE.TRACK
+export const TOTAL_CONCEPTS = BASE.total
