@@ -37,7 +37,7 @@ async function firebaseEngine() {
 
 // ───────────── Demo engine (localStorage) ─────────────
 function demoEngine() {
-  const KEY = 'study-together-demo-v3'
+  const KEY = 'study-together-demo-v4'
   let store = {}
   try { store = JSON.parse(localStorage.getItem(KEY) || '{}') } catch { store = {} }
   const subs = new Set()

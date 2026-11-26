@@ -4,7 +4,7 @@ A private study platform for three friends learning their way from full stack to
 
 **Live:** https://pankqx.github.io/study-together/
 
-Navigation: Today · Roadmap · DSA · Chat in the main bar; Crew, Proof wall, Planner and Board under **More** (top bar on desktop).
+Navigation: Today · Roadmap · DSA · Log in the floating bar; Crew, Proof wall and Profile under **More**; Planner and Boards at the bottom of Today.
 
 ## What's inside
 
@@ -15,7 +15,7 @@ Navigation: Today · Roadmap · DSA · Chat in the main bar; Crew, Proof wall, P
 | **Roadmap** | 10 standalone tracks, each going from basics to pro: DSA in Python, Front end, Back end, DBMS, System design, DevOps, Cloud, Data engineering, AI full stack, Crossover. There's also a Capstones track and a blended **Crossover journey** (12 stages that mix every track). Tap a topic to tick concepts, open free resources, and post proof. |
 | **Crew** | Head-to-head "gap" bars per track, plus rank, XP, streaks, heatmaps and badges for each person. |
 | **Proof** | A wall where you post notes and photos tagged with a roadmap topic. Friends can react. |
-| **Chat** | Group chat with photos, GIFs (GIPHY), replies and reactions. |
+| **Learning log** | One entry a day: what you studied (pre-filled from concepts you ticked), an explanation in your own words, what's still unclear, and topics you'll teach. A shared call agenda collects topics to explain and open questions; tick "Explained" once it's taught. Replies on every entry. |
 | **Board** | Infinite black-and-white whiteboards (Excalidraw) that sync live between the three of you. Export to PNG/SVG. |
 | **Planner** | Week calendar like time.fyi. Quick-add by typing ("Spark joins 7-9pm tomorrow"). Drag to move or resize blocks. Keep a task list, and peek at friends' plans. |
 

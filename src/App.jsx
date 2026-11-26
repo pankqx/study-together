@@ -11,12 +11,13 @@ import Feed from './screens/Feed.jsx'
 import Chat from './screens/Chat.jsx'
 import Planner from './screens/Planner.jsx'
 import Dsa from './screens/Dsa.jsx'
+import Log from './screens/Log.jsx'
 import Welcome from './screens/Welcome.jsx'
 import { Sheet } from './ui.jsx'
 const Board = lazy(() => import('./screens/Board.jsx'))
 
 // the four things you use every day…
-const MAIN = [['today', 'Today', '☀'], ['roadmap', 'Roadmap', '⟿'], ['dsa', 'DSA', '⌗'], ['chat', 'Chat', '✉']]
+const MAIN = [['today', 'Today', '☀'], ['roadmap', 'Roadmap', '⟿'], ['dsa', 'DSA', '⌗'], ['log', 'Log', '✎']]
 // …and everything else, one tap away
 const MORE = [['crew', 'Crew', '⚑', 'Standings, streaks and badges'], ['feed', 'Proof wall', '◫', 'Photos of what you studied']]
 // planner & board live at the bottom of Today; these routes still work
@@ -44,7 +45,7 @@ export default function App() {
 
   return (
     <div className={'shell tab-' + tab}>
-      <main className={'main' + (tab === 'board' && rest[0] ? ' full' : '') + (['roadmap', 'dsa'].includes(tab) ? ' wide' : '')}>
+      <main className={'main' + (tab === 'board' && rest[0] ? ' full' : '') + (['roadmap', 'dsa', 'log'].includes(tab) ? ' wide' : '')}>
         {tab === 'today' && <Today />}
         {tab === 'roadmap' && <Roadmap track={rest[0]} node={rest[1]} />}
         {tab === 'crew' && <Crew />}
@@ -53,6 +54,7 @@ export default function App() {
         {tab === 'board' && <Suspense fallback={<div className="loading">loading the canvas…</div>}><Board id={rest[0]} /></Suspense>}
         {tab === 'plan' && <Planner />}
         {tab === 'dsa' && <Dsa />}
+        {tab === 'log' && <Log />}
       </main>
       <Profile open={profile} onClose={() => setProfile(false)} />
       {me && !me.onboarded && <Welcome />}

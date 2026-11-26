@@ -5,6 +5,7 @@ import { PRONTOPY_URL } from '../config.js'
 import { stats, rank, nextUp, colorOf, nickOf, today, myTracksOf } from '../lib/logic.js'
 import { Avatar, Bar, Check } from '../ui.jsx'
 import { Echo } from '../art.jsx'
+import { useLogs, useTeam } from './Log.jsx'
 
 const hello = () => { const h = new Date().getHours(); return h < 5 ? 'Still up' : h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening' }
 
@@ -12,7 +13,6 @@ export default function Today() {
   const { me, crew, posts, api, rm } = useStore()
   const s = stats(me, posts, rm)
   const r = rank(s.xp)
-  const focus = myTracksOf(me).filter((id) => id !== 'dsa')
   const dsaToday = !!me?.dsa?.[today()]
 
   return (
@@ -54,14 +54,7 @@ export default function Today() {
         </div>
       </section>
 
-      <StudyRoom />
-
-      <section>
-        <div className="sec-head"><h2>Next up in your tracks</h2><a href="#roadmap" className="mono">open roadmap →</a></div>
-        <div className="next-grid">
-          {focus.map((tid) => <NextCard key={tid} tid={tid} />)}
-        </div>
-      </section>
+      <LogCard />
 
       <section>
         <div className="sec-head"><h2>The crew today</h2><a href="#crew" className="mono">full standings →</a></div>
@@ -82,68 +75,6 @@ export default function Today() {
         </div>
       </section>
     </div>
-  )
-}
-
-function NextCard({ tid }) {
-  const { me, api, crew, rm } = useStore()
-  const t = rm.TRACK[tid]
-  if (!t) return null
-  const nd = nextUp(tid, me?.progress, rm)
-  const tp = trackProgress(t, me?.progress)
-  if (!nd) return <div className="card next done-track"><span className="tag">{t.glyph} {t.title}</span><h3>Track complete. Absolute legend. ★</h3></div>
-  const p = nodeProgress(nd, me?.progress)
-  return (
-    <div className="card next">
-      <div className="row between"><span className="tag">{t.glyph} {t.title}</span><span className="mono dim">{Math.round(tp.pct * 100)}% of track</span></div>
-      <h3><a href={`#roadmap/${tid}/${nd.id}`}>{nd.title}</a></h3>
-      <Bar pct={p.pct} color={colorOf(me)} h={6} />
-      <div className="concepts">
-        {nd.concepts.map((c) => {
-          const cid = conceptId(nd.id, c)
-          const others = crew.filter((u) => u.id !== me.id && u.progress?.[cid])
-          return (
-            <div key={cid} className="concept-row">
-              <Check on={!!me?.progress?.[cid]} onChange={(on) => api.toggleConcept(nd.id, c, on)} color={colorOf(me)}>{cText(c)}</Check>
-              <span className="who">{others.map((u) => <i key={u.id} style={{ background: colorOf(u) }} title={nickOf(u)} />)}</span>
-            </div>)
-        })}
-      </div>
-      <p className="done-when">✓ {nd.doneWhen}</p>
-    </div>
-  )
-}
-
-function beep() { try { const a = new AudioContext(), o = a.createOscillator(), g = a.createGain(); o.connect(g); g.connect(a.destination); o.frequency.value = 880; g.gain.setValueAtTime(0.2, a.currentTime); g.gain.exponentialRampToValueAtTime(0.001, a.currentTime + 1.2); o.start(); o.stop(a.currentTime + 1.2) } catch {} }
-
-const MODES = { focus: [50, 'Deep focus'], short: [25, 'Pomodoro'], break: [10, 'Break'] }
-function StudyRoom() {
-  const { me, crew, api } = useStore()
-  const [now, setNow] = useState(Date.now())
-  useEffect(() => { const t = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(t) }, [])
-  const mine = me?.studying?.until > now ? me.studying : null
-  const studying = crew.filter((u) => u.studying?.until > now)
-  const left = mine ? Math.max(0, mine.until - now) : 0
-  const mm = String(Math.floor(left / 60000)).padStart(2, '0'), ss = String(Math.floor((left % 60000) / 1000)).padStart(2, '0')
-  useEffect(() => { if (mine && left < 1000) { api.setStudying(null); api.logActivity(1); beep(); if (window.Notification?.permission === 'granted') new Notification('Session done — log what you learned!') } }, [left < 1000 && !!mine])
-  return (
-    <section className="card room">
-      <div className="room-l">
-        <span className="tag">study room</span>
-        {mine ? (<>
-          <div className="timer">{mm}<span className="blink">:</span>{ss}</div>
-          <p className="mono">{mine.label}</p>
-          <button className="btn ghost" onClick={() => api.setStudying(null)}>Stop</button>
-        </>) : (<>
-          <h2>Start a session</h2>
-          <div className="row wrap">{Object.entries(MODES).map(([k, [m, l]]) => <button key={k} className="btn" onClick={() => { try { window.Notification?.requestPermission?.() } catch {} ; api.setStudying(Date.now() + m * 60000, `${l} · ${m} min`) }}>{l} {m}′</button>)}</div>
-        </>)}
-      </div>
-      <div className="room-r">
-        <p className="mono dim">{studying.length ? 'in the room now' : 'room is empty'}</p>
-        {studying.map((u) => <div key={u.id} className="in-room" style={{ '--c': colorOf(u) }}><Avatar u={u} size={30} ring /><span>{nickOf(u)}</span><small>{u.studying.label}</small></div>)}
-      </div>
-    </section>
   )
 }
 
@@ -175,5 +106,30 @@ function BoardsMini() {
         : <p className="dim">A shared whiteboard for system designs, pipelines and mind maps.</p>}
       <a className="btn solid" href="#board">Open boards</a>
     </div>
+  )
+}
+
+function LogCard() {
+  const { me, crew } = useStore()
+  const logs = useLogs()
+  const team = useTeam()
+  const mine = logs.find((l) => l.id === `${me.id}_${today()}`)
+  const todayLogs = logs.filter((l) => l.day === today())
+  const pending = logs.flatMap((l) => Object.values(l.teach || {})).filter((t) => !t.done).length
+  const nc = team?.nextCall?.at ? new Date(team.nextCall.at).toLocaleString(undefined, { weekday: 'short', hour: 'numeric', minute: '2-digit' }) : null
+  return (
+    <section className="card log-card">
+      <div className="log-card-l">
+        <span className="tag">learning log</span>
+        <h2>{mine ? 'Today is written.' : 'What did you learn today?'}</h2>
+        <p>{mine ? `${mine.studied?.length || 0} topics logged. Read what the others learnt, or add more before the day ends.` : 'Two minutes: what you studied, in your own words, and what you\'ll teach the others.'}</p>
+        <a className="btn solid" href="#log">{mine ? 'Open the log' : 'Write today’s log'}</a>
+      </div>
+      <div className="log-card-r">
+        <div className="log-who">{crew.map((u) => { const did = todayLogs.some((l) => l.uid === u.id); return (
+          <div key={u.id} className={'log-person' + (did ? ' did' : '')} style={{ '--c': colorOf(u) }}><Avatar u={u} size={40} ring={did} /><small>{did ? 'logged' : 'not yet'}</small></div>) })}</div>
+        <p className="mono dim">{pending} topic{pending === 1 ? '' : 's'} to explain{nc ? ` · next call ${nc}` : ''}</p>
+      </div>
+    </section>
   )
 }

@@ -141,6 +141,17 @@ function seedDemo(be) {
       ['two-sum', 'Two Sum', 'easy', 'dsa-hash', 1, ''], ['number-of-islands', 'Number of Islands', 'medium', 'dsa-graph', 1, 'BFS from every unvisited land cell'], ['merge-k-sorted-lists', 'Merge k Sorted Lists', 'hard', 'dsa-heap', 1, 'heap of (val, i, node)'],
       ['reverse-linked-list', 'Reverse Linked List', 'easy', 'dsa-ll', 2, 'draw it first'], ['binary-search', 'Binary Search', 'easy', 'dsa-bs', 0, ''], ['climbing-stairs', 'Climbing Stairs', 'easy', 'dsa-dp', 0, 'it is fibonacci'], ['coin-change', 'Coin Change', 'medium', 'dsa-dp', 1, '']]
     PR.forEach(([slug, title, difficulty, pattern, who, note], k) => { store['problems/pr' + k] = { uid: 'demo-' + who, slug, title, url: `https://leetcode.com/problems/${slug}/`, platform: 'LeetCode', difficulty, pattern, status: k === 2 ? 'revisit' : 'solved', note, at: t - k * 7 * 36e5 } })
+    const day = (n) => today(new Date(t - n * 864e5))
+    store['logs/demo-1_' + day(0)] = { uid: 'demo-1', day: day(0), updatedAt: t - 2 * 36e5, createdAt: t - 3 * 36e5,
+      studied: [{ key: 'de-spark', nodeId: 'de-spark', title: 'Apache Spark' }, { key: 'db-idx', nodeId: 'db-idx', title: 'Indexing & query optimisation' }],
+      summary: 'Spark is lazy: transformations only build a plan, actions run it. Shuffles are the expensive part — a join on a skewed key sends most rows to one executor. Broadcast the small table and the shuffle disappears.',
+      confused: 'When exactly does Spark decide to broadcast on its own?', teach: { t1: { key: 'de-spark', title: 'Apache Spark', nodeId: 'de-spark', done: false } },
+      comments: { c1: { uid: 'demo-0', text: 'explain the skew part on the call, I still don’t get salting', at: t - 36e5 } } }
+    store['logs/demo-2_' + day(1)] = { uid: 'demo-2', day: day(1), updatedAt: t - 26 * 36e5, createdAt: t - 26 * 36e5,
+      studied: [{ key: 'cld-iam', nodeId: 'cld-iam', title: 'Identity & security' }, { key: 'dm-seo', nodeId: 'dm-seo', title: 'SEO' }],
+      summary: 'IAM roles are like temporary badges — nobody should carry the master key. Also learnt that search intent matters more than the keyword itself.',
+      confused: '', teach: { t1: { key: 'cld-iam', title: 'Identity & security', nodeId: 'cld-iam', done: true, doneAt: t - 20 * 36e5, doneBy: 'demo-0' } }, comments: {} }
+    store['meta/team'] = { nextCall: { at: day(-2) + 'T20:00', mode: 'call' } }
     store['roadmapLog/l1'] = { uid: 'demo-1', scope: 'team', action: 'added', title: 'Data engineering interview prep', track: 'de', at: t - 5 * 36e5 }
   })
 }

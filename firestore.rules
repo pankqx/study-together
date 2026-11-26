@@ -16,6 +16,11 @@ service cloud.firestore {
       allow read, create: if signedIn();
       allow update, delete: if signedIn() && resource.data.uid == request.auth.uid;
     }
+    match /logs/{id} {                                                    // learning log (others can comment / tick "explained")
+      allow read, create, update: if signedIn();
+      allow delete: if signedIn() && resource.data.uid == request.auth.uid;
+    }
+    match /meta/{id}          { allow read, write: if signedIn(); }     // next call time
     match /posts/{id} {
       allow read, create, update: if signedIn();
       allow delete: if signedIn() && resource.data.uid == request.auth.uid;
