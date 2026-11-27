@@ -91,6 +91,7 @@ function Rung({ p, open, onToggle }) {
         </span>
         <span className="bd-rung-side">
           <span className={'bd-size s-' + p.size} title={SIZE[p.size].hint}>{SIZE[p.size].label}</span>
+          {WALKTHROUGH_IDS.has(p.id) && <span className="bd-size bd-has-guide" title="Has a step-by-step guide">guide</span>}
           {st?.status === 'shipped' ? <span className="bd-state ship">Shipped</span> : st?.status === 'building' ? <span className="bd-state">{steps}/{p.steps.length}</span> : null}
           <CrewDots pid={p.id} />
         </span>

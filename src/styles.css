@@ -1202,3 +1202,4 @@ a.rm-btn { text-decoration: none; display: inline-flex; align-items: center; }
 .ln-pick { margin: 18px 0; padding: 14px; border-radius: 14px; border: 1.5px solid var(--r-ink); }
 .ln-pick-tag { font: 700 11px 'IBM Plex Mono', monospace; text-transform: uppercase; letter-spacing: .08em; background: var(--r-ink); color: var(--r-card); padding: 2px 8px; border-radius: 999px; }
 .ln-pick > p { margin: 10px 0 !important; font-weight: 600; }
+.bd-has-guide { color: var(--r-ink); border-style: dashed; }
