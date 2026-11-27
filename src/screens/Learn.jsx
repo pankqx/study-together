@@ -11,9 +11,22 @@ import CL from '../data/lessons/cloud.js'
 import CL2 from '../data/lessons/cloud2.js'
 import DM from '../data/lessons/dm.js'
 import DM2 from '../data/lessons/dm2.js'
+import DEX from '../data/lessons/de-extra.js'
+import AIX from '../data/lessons/ai-extra.js'
 import { HOW_TO_BUILD, WALKTHROUGHS } from '../data/lessons/guides.js'
 
-const LESSONS = { ...DE, ...DE2, ...DE3, ...AI, ...AI2, ...CL, ...CL2, ...DM, ...DM2 }
+// extras add interactive blocks to existing concepts, plus deep-dive sections and extra quiz questions
+function deepen(base, extras) {
+  const out = { ...base }
+  for (const [id, x] of Object.entries(extras)) {
+    const L = out[id]; if (!L) continue
+    out[id] = { ...L,
+      concepts: [...L.concepts.map((c) => (x.add?.[c.t] ? { ...c, blocks: [...c.blocks, ...x.add[c.t]] } : c)), ...(x.deeper || [])],
+      quiz: [...L.quiz, ...(x.quiz || [])] }
+  }
+  return out
+}
+const LESSONS = deepen({ ...DE, ...DE2, ...DE3, ...AI, ...AI2, ...CL, ...CL2, ...DM, ...DM2 }, { ...DEX, ...AIX })
 const ready = (t) => t.nodes.filter((n) => LESSONS[n.id])
 
 export default function Learn({ rest = [] }) {
@@ -110,7 +123,7 @@ function Lesson({ t, nd, L, focus }) {
         const c = byText[x.t]; const on = c && !!me?.progress?.[conceptId(nd.id, c)]
         return (
           <section key={i} className="ln-sec" id={'c-' + (c ? cKey(c) : slug(x.t))}>
-            <h2><span className="mono">{i + 1}</span>{x.t}</h2>
+            <h2><span className="mono">{x.deep ? '★' : i + 1}</span>{x.t}</h2>
             <Body text={x.body} />
             {x.blocks.map((bk, j) => <Block key={j} b={bk} topic={`${nd.title}: ${x.t}`} />)}
             <div className="ln-sec-acts">
