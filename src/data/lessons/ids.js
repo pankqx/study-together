@@ -8,7 +8,11 @@ export const LESSON_IDS = new Set(['de-found', 'de-py', 'de-files', 'de-model', 
   'dm-found', 'dm-research', 'dm-brand', 'dm-content', 'dm-design', 'dm-social', 'dm-video', 'dm-brandme', 'dm-seo', 'dm-email', 'dm-tools', 'dm-ecom', 'dm-ads', 'dm-analytics', 'dm-cro', 'dm-growth', 'dm-ai', 'dm-cert',
   'fe-web', 'fe-html', 'fe-css', 'fe-js', 'fe-ts', 'fe-build', 'fe-react', 'fe-react2', 'fe-forms', 'fe-browser', 'fe-next', 'fe-ui', 'fe-design-sys', 'fe-viz', 'fe-test', 'fe-perf', 'fe-a11y', 'fe-sec', 'fe-deploy',
   'be-node', 'be-rest', 'be-http', 'be-auth', 'be-orm', 'be-py', 'be-arch', 'be-search', 'be-perf', 'be-deploy', 'be-cache', 'be-jobs', 'be-rt', 'be-gql', 'be-sec', 'be-test',
-  'db-model', 'db-sql', 'db-sql2', 'db-norm', 'db-txn', 'db-idx', 'db-storage', 'db-pg', 'db-prog', 'db-admin', 'db-nosql', 'db-dist', 'db-olap'])
+  'db-model', 'db-sql', 'db-sql2', 'db-norm', 'db-txn', 'db-idx', 'db-storage', 'db-pg', 'db-prog', 'db-admin', 'db-nosql', 'db-dist', 'db-olap',
+  'sd-basics', 'sd-net', 'sd-cache', 'sd-async', 'sd-arch', 'sd-classic', 'sd-data', 'sd-ai',
+  'ops-linux', 'ops-shell', 'ops-git', 'ops-net', 'ops-docker', 'ops-ci', 'ops-iac', 'ops-k8s', 'ops-obs', 'ops-gitops',
+  'x-dsa-data', 'x-app-db', 'x-be-de', 'x-cloud-de', 'x-ops-de', 'x-de-ai', 'x-fs-ai', 'x-ai-eng', 'x-cloud-ai', 'x-sd-all', 'x-career',
+  'cap-fs', 'cap-db', 'cap-batch', 'cap-stream', 'cap-lake', 'cap-ai', 'cap-dm', 'cap-cloud', 'cap-team'])
 const r = (p, n) => Array.from({ length: n }, (_, i) => p + '-' + (i + 1))
-export const WALKTHROUGH_IDS = new Set([...r('fe', 7), ...r('be', 7), ...r('db', 7), ...r('de', 7), ...r('ai', 7), ...r('fl', 4)])
+export const WALKTHROUGH_IDS = new Set([...r('fe', 7), ...r('be', 7), ...r('db', 7), ...r('de', 7), ...r('ai', 7), ...r('fl', 4), ...r('sd', 7), ...r('ops', 7), ...r('cl', 7), ...r('dm', 7)])
 export const lessonHref = (track, node, key) => `#learn/${track}/${node}${key ? '/' + key : ''}`

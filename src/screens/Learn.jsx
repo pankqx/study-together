@@ -16,13 +16,17 @@ import FE2 from '../data/lessons/fe2.js'
 import BE from '../data/lessons/be.js'
 import BE2 from '../data/lessons/be2.js'
 import DB from '../data/lessons/db.js'
+import SD from '../data/lessons/sd.js'
+import OPS from '../data/lessons/ops.js'
+import XC from '../data/lessons/x.js'
 import DEX from '../data/lessons/de-extra.js'
 import AIX from '../data/lessons/ai-extra.js'
 import { HOW_TO_BUILD, WALKTHROUGHS as W0 } from '../data/lessons/guides.js'
 import GFE from '../data/lessons/guides-fe.js'
 import GBD from '../data/lessons/guides-be-db.js'
 import GMORE from '../data/lessons/guides-more.js'
-const WALKTHROUGHS = { ...W0, ...GFE, ...GBD, ...GMORE }
+import GREST from '../data/lessons/guides-rest.js'
+const WALKTHROUGHS = { ...W0, ...GFE, ...GBD, ...GMORE, ...GREST }
 
 // extras add interactive blocks to existing concepts, plus deep-dive sections and extra quiz questions
 function deepen(base, extras) {
@@ -35,7 +39,7 @@ function deepen(base, extras) {
   }
   return out
 }
-const LESSONS = deepen({ ...DE, ...DE2, ...DE3, ...AI, ...AI2, ...CL, ...CL2, ...DM, ...DM2, ...FE, ...FE2, ...BE, ...BE2, ...DB }, { ...DEX, ...AIX })
+const LESSONS = deepen({ ...DE, ...DE2, ...DE3, ...AI, ...AI2, ...CL, ...CL2, ...DM, ...DM2, ...FE, ...FE2, ...BE, ...BE2, ...DB, ...SD, ...OPS, ...XC }, { ...DEX, ...AIX })
 const ready = (t) => t.nodes.filter((n) => LESSONS[n.id])
 
 export default function Learn({ rest = [] }) {
