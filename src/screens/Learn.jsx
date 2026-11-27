@@ -3,9 +3,13 @@ import { useStore } from '../store.jsx'
 import { TRACKS, NODE, cText, cKey, slug, conceptId } from '../data/roadmap.js'
 import { BUILD } from '../data/builds.js'
 import DE from '../data/lessons/de.js'
+import DE2 from '../data/lessons/de2.js'
+import DE3 from '../data/lessons/de3.js'
+import AI from '../data/lessons/ai.js'
+import AI2 from '../data/lessons/ai2.js'
 import { HOW_TO_BUILD, WALKTHROUGHS } from '../data/lessons/guides.js'
 
-const LESSONS = { ...DE }
+const LESSONS = { ...DE, ...DE2, ...DE3, ...AI, ...AI2 }
 const ready = (t) => t.nodes.filter((n) => LESSONS[n.id])
 
 export default function Learn({ rest = [] }) {
@@ -205,7 +209,10 @@ function Block({ b }) {
     <tbody>{b.table.rows.map((r, i) => <tr key={i}>{r.map((c, j) => <td key={j}>{c}</td>)}</tr>)}</tbody></table></div>
   if (b.code) return (
     <div className="ln-code"><div className="ln-code-bar"><span>{b.lang}</span>
-      <button onClick={() => { navigator.clipboard?.writeText(b.code); setCopied(true); setTimeout(() => setCopied(false), 1200) }}>{copied ? 'copied' : 'copy'}</button></div>
+      <span className="ln-code-acts">
+        <button title="Copies a prompt you can paste into Claude or any AI" onClick={() => { navigator.clipboard?.writeText(`I'm learning from a course. Explain step by step how to run this ${b.lang} code on my laptop (Ubuntu and Windows): what to install, where to save it, the exact commands, what output to expect, and how to fix common errors.\n\n\`\`\`${b.lang}\n${b.code}\n\`\`\``); setCopied('ai'); setTimeout(() => setCopied(false), 1400) }}>{copied === 'ai' ? 'prompt copied' : 'ask AI'}</button>
+        <button onClick={() => { navigator.clipboard?.writeText(b.code); setCopied('code'); setTimeout(() => setCopied(false), 1200) }}>{copied === 'code' ? 'copied' : 'copy'}</button>
+      </span></div>
       <pre><code>{b.code}</code></pre></div>)
   if (b.note) return <p className="ln-note"><Inline s={b.note} /></p>
   return null

@@ -1158,3 +1158,4 @@ input, textarea, select { border: 2px solid transparent; background: var(--card)
 .rm-learn { margin-left: auto; font: 600 11px 'IBM Plex Mono', monospace; color: var(--r-ink); text-decoration: none; border: 1px solid var(--r-line); padding: 2px 8px; border-radius: 999px; flex: none; }
 .bd-guides { display: flex; gap: 8px; flex-wrap: wrap; }
 a.rm-btn { text-decoration: none; display: inline-flex; align-items: center; }
+.ln-code-acts { display: flex; gap: 14px; }
