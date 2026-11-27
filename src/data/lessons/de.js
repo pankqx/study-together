@@ -304,7 +304,7 @@ You rarely start with it, but you should recognise the words in an interview.`,
 
 - **Timestamp watermark** — \`WHERE updated_at > last_max\`. Easy; misses deletes and rows with bad timestamps.
 - **Hash compare** — hash every row, compare to last run. Catches any change; costs a full scan.
-- **CDC** (change data capture) — read the database's own change log (Postgres WAL). Catches inserts, updates *and* deletes in order. Most reliable, more setup (Debezium).`,
+- **CDC** (change data capture) — read the database's own change log (Postgres WAL). Catches inserts, updates **and** deletes in order. Most reliable, more setup (Debezium).`,
         { code: `SELECT * FROM orders
 WHERE updated_at > :last_watermark      -- saved from the previous run
   AND updated_at <= :this_run_started   -- fixed upper bound avoids gaps`, lang: 'sql' },

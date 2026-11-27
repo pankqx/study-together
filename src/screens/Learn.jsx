@@ -108,9 +108,12 @@ function Lesson({ t, nd, L, focus }) {
           <section key={i} className="ln-sec" id={'c-' + (c ? cKey(c) : slug(x.t))}>
             <h2><span className="mono">{i + 1}</span>{x.t}</h2>
             <Body text={x.body} />
-            {x.blocks.map((bk, j) => <Block key={j} b={bk} />)}
-            {c && <button className={'ln-got' + (on ? ' on' : '')} onClick={() => api.toggleConcept(nd.id, c, !on)}>
-              {on ? '✓ I can explain this' : 'I can explain this'}</button>}
+            {x.blocks.map((bk, j) => <Block key={j} b={bk} topic={`${nd.title}: ${x.t}`} />)}
+            <div className="ln-sec-acts">
+              {c && <button className={'ln-got' + (on ? ' on' : '')} onClick={() => api.toggleConcept(nd.id, c, !on)}>
+                {on ? '✓ I can explain this' : 'I can explain this'}</button>}
+              <AskAI className="pill" label="Ask AI about this" prompt={`I'm studying "${x.t}" (part of ${nd.title}, ${t.title}). Teach it to me simply: explain it with a real-world analogy, show a small practical example, list 2 common mistakes, then quiz me with 3 questions one at a time and wait for my answers.`} />
+            </div>
           </section>)
       })}
 
@@ -172,16 +175,43 @@ function Guide({ g, pid }) {
       <a className="ln-back" href={p ? `#build/${p.track}/${pid}` : '#build'}>← {p ? p.title : 'Build & learn'}</a>
       <header className="ln-head"><span className="ln-kicker">{p ? 'build guide' : 'method'}</span><h1>{g.title}</h1><p>{g.intro}</p></header>
       {g.steps.map((s, i) => (
-        <section key={i} className="ln-sec"><h2>{s.t}</h2><Body text={s.body} />{s.blocks.map((b, j) => <Block key={j} b={b} />)}</section>))}
+        <section key={i} className="ln-sec"><h2>{s.t}</h2><Body text={s.body} />{s.blocks.map((b, j) => <Block key={j} b={b} topic={g.title} />)}</section>))}
       {p && <nav className="ln-pager"><a href="#learn/guide">← How to do any build</a><a href={`#build/${p.track}/${pid}`}>Start this build →</a></nav>}
     </article>
   )
 }
 
+/* ── send a prompt to an AI chat in a new tab (prompt also copied as a fallback) ── */
+const AIS = [
+  ['Claude', (q) => 'https://claude.ai/new?q=' + encodeURIComponent(q)],
+  ['ChatGPT', (q) => 'https://chatgpt.com/?q=' + encodeURIComponent(q)],
+  ['Perplexity', (q) => 'https://www.perplexity.ai/search?q=' + encodeURIComponent(q)],
+]
+function AskAI({ prompt, label = 'ask AI', className = '' }) {
+  const [open, setOpen] = useState(false)
+  const [note, setNote] = useState('')
+  const send = (make) => {
+    navigator.clipboard?.writeText(prompt).catch(() => {})
+    const long = prompt.length > 6000
+    window.open(make(long ? prompt.slice(0, 6000) + '\n\n[cut — full prompt is on your clipboard, paste it]' : prompt), '_blank', 'noopener')
+    setNote(long ? 'Long prompt — it was cut in the link; paste the full one from your clipboard.' : 'Opened in a new tab. Also copied, in case it asks you to paste.')
+    setOpen(false); setTimeout(() => setNote(''), 4000)
+  }
+  return (
+    <span className={'ln-ask ' + className}>
+      <button onClick={() => setOpen(!open)} aria-expanded={open}>{label}</button>
+      {open && <span className="ln-ask-menu" role="menu">{AIS.map(([n, make]) => <button key={n} role="menuitem" onClick={() => send(make)}>{n} ↗</button>)}</span>}
+      {note && <span className="ln-ask-note">{note}</span>}
+    </span>
+  )
+}
+
 /* ── tiny renderer: paragraphs, bullets, numbered lists, **bold**, `code` ── */
 function Inline({ s }) {
-  return s.split(/(\*\*[^*]+\*\*|`[^`]+`)/g).map((x, i) =>
-    x.startsWith('**') ? <b key={i}>{x.slice(2, -2)}</b> : x.startsWith('`') ? <code key={i}>{x.slice(1, -1)}</code> : x)
+  return s.split(/(`[^`]+`|\*\*[^*]+\*\*|\*[^*\s][^*]*?\*)/g).map((x, i) =>
+    x.startsWith('`') ? <code key={i}>{x.slice(1, -1)}</code>
+      : x.startsWith('**') ? <b key={i}>{x.slice(2, -2)}</b>
+      : x.length > 2 && x.startsWith('*') && x.endsWith('*') ? <em key={i}>{x.slice(1, -1)}</em> : x)
 }
 function Body({ text }) {
   if (!text) return null
@@ -202,7 +232,7 @@ function Body({ text }) {
   })
   return out
 }
-function Block({ b }) {
+function Block({ b, topic }) {
   const [copied, setCopied] = useState(false)
   if (b.flow) return <div className="ln-flow">{b.flow.map((s, i) => <span key={i}><i>{s}</i>{i < b.flow.length - 1 && <em>→</em>}</span>)}</div>
   if (b.table) return <div className="ln-table"><table><thead><tr>{b.table.cols.map((c, i) => <th key={i}>{c}</th>)}</tr></thead>
@@ -210,7 +240,7 @@ function Block({ b }) {
   if (b.code) return (
     <div className="ln-code"><div className="ln-code-bar"><span>{b.lang}</span>
       <span className="ln-code-acts">
-        <button title="Copies a prompt you can paste into Claude or any AI" onClick={() => { navigator.clipboard?.writeText(`I'm learning from a course. Explain step by step how to run this ${b.lang} code on my laptop (Ubuntu and Windows): what to install, where to save it, the exact commands, what output to expect, and how to fix common errors.\n\n\`\`\`${b.lang}\n${b.code}\n\`\`\``); setCopied('ai'); setTimeout(() => setCopied(false), 1400) }}>{copied === 'ai' ? 'prompt copied' : 'ask AI'}</button>
+        <AskAI prompt={`I'm learning ${topic || 'data engineering / AI'} from a course. Explain step by step how to run this ${b.lang} code on my laptop (Ubuntu and Windows): what to install, where to save it, the exact commands, what output to expect, and how to fix common errors. Then explain what each part does in simple words.\n\n\`\`\`${b.lang}\n${b.code}\n\`\`\``} />
         <button onClick={() => { navigator.clipboard?.writeText(b.code); setCopied('code'); setTimeout(() => setCopied(false), 1200) }}>{copied === 'code' ? 'copied' : 'copy'}</button>
       </span></div>
       <pre><code>{b.code}</code></pre></div>)
