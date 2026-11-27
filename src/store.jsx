@@ -77,6 +77,7 @@ export function StoreProvider({ children }) {
       buildStart: (pid) => be.updateDoc(path, { [`builds.${pid}.status`]: 'building', [`builds.${pid}.started`]: Date.now(), ...bump() }),
       buildShip: (pid) => be.updateDoc(path, { [`builds.${pid}.status`]: 'shipped', [`builds.${pid}.shipped`]: Date.now(), ...bump(3) }),
       buildDrop: (pid) => be.updateDoc(path, { ['builds.' + pid]: DEL }),
+      quizScore: (nodeId, score, of, prevBest = 0) => be.updateDoc(path, { [`quiz.${nodeId}`]: { best: Math.max(score, prevBest), of, last: score, at: Date.now() }, ...bump() }),
       setCurrent: (nodeId) => be.updateDoc(path, { current: nodeId || DEL }),
       setMode: (m) => be.updateDoc(path, { rmMode: m }),
       updateProfile: (p) => be.updateDoc(path, p),

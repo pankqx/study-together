@@ -17,11 +17,12 @@ import Splash from './screens/Splash.jsx'
 import Build from './screens/Build.jsx'
 import { Sheet } from './ui.jsx'
 const Board = lazy(() => import('./screens/Board.jsx'))
+const Learn = lazy(() => import('./screens/Learn.jsx'))
 
 // the five things you use every day…
 const MAIN = [['today', 'Today', '☀'], ['roadmap', 'Roadmap', '⟿'], ['build', 'Build', '⚒'], ['dsa', 'DSA', '⌗'], ['log', 'Log', '✎']]
 // …and everything else, one tap away
-const MORE = [['crew', 'Crew', '⚑', 'Standings, streaks and badges'], ['plan', 'Planner', '▦', 'Day, week, month and year'], ['board', 'Boards', '✎', 'One board each, open to all']]
+const MORE = [['learn', 'Courses', '❋', 'Lessons, quizzes and build guides'], ['crew', 'Crew', '⚑', 'Standings, streaks and badges'], ['plan', 'Planner', '▦', 'Day, week, month and year'], ['board', 'Boards', '✎', 'One board each, open to all']]
 // planner & board live at the bottom of Today; these routes still work
 const SUB = ['plan', 'board', 'feed']
 
@@ -49,9 +50,10 @@ export default function App() {
 
   return (
     <div className={'shell tab-' + tab}>
-      <main className={'main' + (tab === 'board' && rest[0] ? ' full' : '') + (['roadmap', 'build', 'dsa', 'log'].includes(tab) ? ' wide' : '')}>
+      <main className={'main' + (tab === 'board' && rest[0] ? ' full' : '') + (['roadmap', 'build', 'dsa', 'log', 'learn'].includes(tab) ? ' wide' : '')}>
         {tab === 'today' && <Today />}
         {tab === 'roadmap' && <Roadmap track={rest[0]} node={rest[1]} />}
+        {tab === 'learn' && <Suspense fallback={<div className="loading">opening the lesson…</div>}><Learn rest={rest} /></Suspense>}
         {tab === 'build' && <Build track={rest[0]} pid={rest[1]} />}
         {tab === 'crew' && <Crew />}
         {tab === 'feed' && <Feed />}

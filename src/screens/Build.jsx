@@ -4,6 +4,7 @@ import { go } from '../App.jsx'
 import { BUILD_TRACKS, BUILD_TRACK, BUILD, SIZE, RETRO, doneListOf } from '../data/builds.js'
 import { colorOf, nickOf, myTracksOf } from '../lib/logic.js'
 import { NODE } from '../data/roadmap.js'
+import { LESSON_IDS, WALKTHROUGH_IDS, lessonHref } from '../data/lessons/ids.js'
 
 const LOOP = [
   ['Pick', 'the next rung on your ladder'],
@@ -114,13 +115,17 @@ function Detail({ p, st }) {
   return (
     <div className="bd-detail">
       {p.team && <p className="bd-team"><b>Who does what:</b> {p.team}</p>}
+      <div className="bd-guides">
+        {WALKTHROUGH_IDS.has(p.id) && <a className="rm-btn solid" href={`#learn/guide/${p.id}`}>Step-by-step guide</a>}
+        <a className="rm-btn" href="#learn/guide">How to do any build</a>
+      </div>
       <div className="bd-chips">{p.stack.map((s) => <span key={s}>{s}</span>)}</div>
 
       <div className="bd-grid">
         <section>
           <h4>Learn while you build</h4>
           <ul className="bd-learn">{p.learn.filter((id) => NODE[id]).map((id) => (
-            <li key={id}><a href={`#roadmap/${NODE[id].track}/${id}`}>{NODE[id].title} →</a></li>))}</ul>
+            <li key={id}><a href={LESSON_IDS.has(id) ? lessonHref(NODE[id].track, id) : `#roadmap/${NODE[id].track}/${id}`}>{LESSON_IDS.has(id) ? '❋ ' : ''}{NODE[id].title} →</a></li>))}</ul>
           <h4>Think like a senior</h4>
           <ul className="bd-senior">{p.senior.map((q) => <li key={q}>{q}</li>)}</ul>
           <p className="bd-done"><b>Done when:</b> {p.done}</p>

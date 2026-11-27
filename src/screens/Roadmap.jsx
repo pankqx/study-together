@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useStore } from '../store.jsx'
-import { LEVELS, nodeProgress, trackProgress, conceptId, cText } from '../data/roadmap.js'
+import { LEVELS, nodeProgress, trackProgress, conceptId, cText, cKey } from '../data/roadmap.js'
+import { LESSON_IDS, lessonHref } from '../data/lessons/ids.js'
 import { PRONTOPY_URL } from '../config.js'
 import { colorOf, nickOf, initial, timeAgo, myTracksOf } from '../lib/logic.js'
 import { Composer } from './Feed.jsx'
@@ -227,6 +228,7 @@ function Detail({ nd, t, edit, highlight }) {
               <input type="checkbox" checked={on} onChange={(e) => api.toggleConcept(nd.id, c, e.target.checked)} />
               <span className="rm-box" aria-hidden>{on ? '✓' : ''}</span>
               <span className="rm-ctext">{txt}</span>
+              {LESSON_IDS.has(nd.id) && <a className="rm-learn" href={lessonHref(t.id, nd.id, cKey(c))} onClick={(e) => e.stopPropagation()}>Learn</a>}
               <span className="rm-who">{crew.filter((u) => u.id !== me.id && u.progress?.[cid]).map((u) => <i key={u.id} style={{ color: colorOf(u) }} title={nickOf(u)}>{initial(u)}</i>)}</span>
             </label>)
         })}
@@ -236,6 +238,7 @@ function Detail({ nd, t, edit, highlight }) {
             : <button className="rm-btn" onClick={() => api.setNodeDone(nd, false)}>Clear all</button>}
           {me?.current === nd.id ? <button className="rm-btn" onClick={() => api.setCurrent(null)}>Unset current topic</button>
             : <button className="rm-btn" onClick={() => api.setCurrent(nd.id)}>Set as my current topic</button>}
+          {LESSON_IDS.has(nd.id) && <a className="rm-btn solid" href={lessonHref(t.id, nd.id)}>Open the lesson</a>}
           <button className="rm-btn" onClick={() => setProof(!proof)}>{proof ? 'Close' : 'Post proof'}</button>
         </div>
         {proof && <div className="rm-proof"><Composer node={nd.id} compact /></div>}
