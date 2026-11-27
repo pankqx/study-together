@@ -7,9 +7,13 @@ import DE2 from '../data/lessons/de2.js'
 import DE3 from '../data/lessons/de3.js'
 import AI from '../data/lessons/ai.js'
 import AI2 from '../data/lessons/ai2.js'
+import CL from '../data/lessons/cloud.js'
+import CL2 from '../data/lessons/cloud2.js'
+import DM from '../data/lessons/dm.js'
+import DM2 from '../data/lessons/dm2.js'
 import { HOW_TO_BUILD, WALKTHROUGHS } from '../data/lessons/guides.js'
 
-const LESSONS = { ...DE, ...DE2, ...DE3, ...AI, ...AI2 }
+const LESSONS = { ...DE, ...DE2, ...DE3, ...AI, ...AI2, ...CL, ...CL2, ...DM, ...DM2 }
 const ready = (t) => t.nodes.filter((n) => LESSONS[n.id])
 
 export default function Learn({ rest = [] }) {
@@ -232,8 +236,54 @@ function Body({ text }) {
   })
   return out
 }
+function Steps({ steps }) {
+  const [i, setI] = useState(0)
+  const [t, d] = steps[i]
+  return (
+    <div className="ln-steps">
+      <div className="ln-steps-dots">{steps.map(([s], k) => (
+        <button key={k} className={k === i ? 'on' : k < i ? 'past' : ''} onClick={() => setI(k)} aria-label={s}><span>{k + 1}</span><em>{s}</em></button>))}</div>
+      <div className="ln-steps-body" key={i}><b>{i + 1}. {t}</b><p><Inline s={d} /></p></div>
+      <div className="ln-steps-nav">
+        <button disabled={!i} onClick={() => setI(i - 1)}>← Back</button>
+        <span className="mono">{i + 1}/{steps.length}</span>
+        <button disabled={i === steps.length - 1} onClick={() => setI(i + 1)}>Next →</button>
+      </div>
+    </div>)
+}
+function Cards({ cards }) {
+  const [flip, setFlip] = useState({})
+  return (
+    <div className="ln-cards">{cards.map(([f, bk], k) => (
+      <button key={k} className={'ln-card' + (flip[k] ? ' flip' : '')} onClick={() => setFlip({ ...flip, [k]: !flip[k] })}>
+        <span className="ln-card-in"><span className="ln-card-f">{f}<small>tap to flip</small></span><span className="ln-card-b"><Inline s={bk} /></span></span>
+      </button>))}</div>)
+}
+function Arch({ tiers }) {
+  return (
+    <div className="ln-arch">{tiers.map(([label, boxes], k) => (
+      <div key={k} className="ln-arch-tier">
+        {k > 0 && <div className="ln-arch-arrow">↓</div>}
+        <div className="ln-arch-row"><span className="ln-arch-label">{label}</span>
+          <div className="ln-arch-boxes">{boxes.map((x, j) => <span key={j}>{x}</span>)}</div></div>
+      </div>))}</div>)
+}
+function Pick({ q, options }) {
+  const [p, setP] = useState(null)
+  return (
+    <div className="ln-pick"><span className="ln-pick-tag">try it</span><p><Inline s={q} /></p>
+      <div className="ln-opts">{options.map(([o, ok], k) => (
+        <button key={k} disabled={p !== null} className={p === null ? '' : ok ? 'right' : k === p ? 'wrong' : 'dim'} onClick={() => setP(k)}>{o}</button>))}</div>
+      {p !== null && <p className={'ln-why ' + (options[p][1] ? 'ok' : 'no')}>{options[p][1] ? 'Yes. ' : 'Not quite. '}{options.find((x) => x[1])[2]}</p>}
+    </div>)
+}
+
 function Block({ b, topic }) {
   const [copied, setCopied] = useState(false)
+  if (b.steps) return <Steps steps={b.steps} />
+  if (b.cards) return <Cards cards={b.cards} />
+  if (b.arch) return <Arch tiers={b.arch} />
+  if (b.pick) return <Pick {...b.pick} />
   if (b.flow) return <div className="ln-flow">{b.flow.map((s, i) => <span key={i}><i>{s}</i>{i < b.flow.length - 1 && <em>→</em>}</span>)}</div>
   if (b.table) return <div className="ln-table"><table><thead><tr>{b.table.cols.map((c, i) => <th key={i}>{c}</th>)}</tr></thead>
     <tbody>{b.table.rows.map((r, i) => <tr key={i}>{r.map((c, j) => <td key={j}>{c}</td>)}</tr>)}</tbody></table></div>

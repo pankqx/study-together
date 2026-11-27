@@ -1171,3 +1171,34 @@ a.rm-btn { text-decoration: none; display: inline-flex; align-items: center; }
 .ln-sec-acts .ln-got { margin-top: 0; }
 .ln-ask.pill > button { border: 1px solid var(--r-line); color: var(--r-ink); padding: 9px 14px; border-radius: 999px; font-weight: 600; font-size: 14px; }
 .ln-ask.pill .ln-ask-menu, .ln-ask.pill .ln-ask-note { left: 0; right: auto; }
+/* interactive lesson blocks */
+.ln-steps { margin: 18px 0; border: 1px solid var(--r-line); border-radius: 14px; background: var(--r-card); overflow: hidden; }
+.ln-steps-dots { display: flex; overflow-x: auto; gap: 0; border-bottom: 1px solid var(--r-line); scrollbar-width: none; }
+.ln-steps-dots::-webkit-scrollbar { display: none; }
+.ln-steps-dots button { flex: 1 0 auto; min-width: 74px; display: grid; justify-items: center; gap: 4px; padding: 10px 8px; background: none; border: 0; border-bottom: 2px solid transparent; color: var(--r-mute); cursor: pointer; }
+.ln-steps-dots span { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font: 700 12px 'IBM Plex Mono', monospace; border: 1.5px solid var(--r-line); }
+.ln-steps-dots em { font-style: normal; font-size: 11px; max-width: 96px; text-align: center; line-height: 1.25; }
+.ln-steps-dots button.past span { background: var(--r-soft); border-color: var(--r-mute); }
+.ln-steps-dots button.on { color: var(--r-ink); border-bottom-color: var(--r-ink); }
+.ln-steps-dots button.on span { background: var(--r-ink); color: var(--r-card); border-color: var(--r-ink); }
+.ln-steps-body { padding: 16px; animation: lnIn .25s ease; } .ln-steps-body b { font-size: 16px; } .ln-steps-body p { margin: 6px 0 0; font-size: 15px !important; }
+@keyframes lnIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.ln-steps-nav { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; border-top: 1px solid var(--r-line); }
+.ln-steps-nav button { background: none; border: 0; font-weight: 600; font-size: 14px; color: var(--r-ink); cursor: pointer; padding: 6px; } .ln-steps-nav button:disabled { opacity: .3; }
+.ln-steps-nav .mono { font-size: 12px; color: var(--r-mute); }
+.ln-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin: 16px 0; }
+.ln-card { perspective: 900px; background: none; border: 0; padding: 0; min-height: 130px; cursor: pointer; text-align: left; }
+.ln-card-in { position: relative; display: block; width: 100%; height: 100%; min-height: 130px; transition: transform .45s; transform-style: preserve-3d; }
+.ln-card.flip .ln-card-in { transform: rotateY(180deg); }
+.ln-card-f, .ln-card-b { position: absolute; inset: 0; backface-visibility: hidden; border-radius: 14px; padding: 14px; display: flex; flex-direction: column; justify-content: center; font-size: 15px; line-height: 1.45; }
+.ln-card-f { background: var(--r-ink); color: var(--r-card); font-weight: 700; } .ln-card-f small { font: 400 11px 'IBM Plex Mono', monospace; opacity: .6; margin-top: 8px; }
+.ln-card-b { background: var(--r-card); color: var(--r-ink); border: 1.5px solid var(--r-ink); transform: rotateY(180deg); }
+.ln-arch { margin: 18px 0; padding: 14px; border-radius: 14px; background: var(--r-soft); }
+.ln-arch-arrow { text-align: center; color: var(--r-mute); line-height: 1.6; }
+.ln-arch-row { border: 1.5px dashed var(--r-mute); border-radius: 12px; padding: 10px; background: var(--r-card); }
+.ln-arch-label { display: block; font: 600 11px 'IBM Plex Mono', monospace; text-transform: uppercase; letter-spacing: .06em; color: var(--r-mute); margin-bottom: 8px; }
+.ln-arch-boxes { display: flex; flex-wrap: wrap; gap: 8px; }
+.ln-arch-boxes span { flex: 1 1 auto; text-align: center; padding: 10px 12px; border-radius: 9px; border: 1.5px solid var(--r-ink); font-weight: 600; font-size: 14px; background: var(--r-card); }
+.ln-pick { margin: 18px 0; padding: 14px; border-radius: 14px; border: 1.5px solid var(--r-ink); }
+.ln-pick-tag { font: 700 11px 'IBM Plex Mono', monospace; text-transform: uppercase; letter-spacing: .08em; background: var(--r-ink); color: var(--r-card); padding: 2px 8px; border-radius: 999px; }
+.ln-pick > p { margin: 10px 0 !important; font-weight: 600; }
